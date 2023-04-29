@@ -82,6 +82,22 @@ local Enum = {
                         __type = 'EnumDataValue',
                     })
                     getmetatable(a).parent = enum[_enumData]
+                    -- a.match = function (enumDataValue)
+                    --     local matching = false
+                    --     if getmetatable(enumDataValue).parent == getmetatable(a).parent then
+                    --         for i, p in pairs(a) do
+                    --             if i ~= 'match' then
+                    --                 if p == enumDataValue[i] or enumDataValue[i] == '_' then
+                    --                     matching = true
+                    --                 else
+                    --                     matching = false
+                    --                     break
+                    --                 end
+                    --             end
+                    --         end
+                    --     end
+                    --     return matching
+                    -- end
                     return a
                 end
                 enum[_enumData].parent = enum
@@ -104,6 +120,10 @@ local Enum = {
                 return q(unpack(packed))
             end
         end
+        if cases.default then
+            return cases.default()
+        end
+        return nil
     end
 }
 

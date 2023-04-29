@@ -1,8 +1,10 @@
+local FieldStatus = require 'ChessyXeL.FieldStatus'
+local Method = require 'ChessyXeL.Method'
 local Sprite = require 'ChessyXeL.display.Sprite'
 local Object = require 'ChessyXeL.display.object.Object'
-local Method = require 'ChessyXeL.Method'
--- local FieldStatus = require 'ChessyXeL.FieldStatus'
 local Color = require 'ChessyXeL.util.Color'
+local TextUtil = require 'ChessyXeL.hscript.TextUtil'
+
 ---@class display.text.Text : display.Sprite a Class that makes Texts
 local Text = Sprite.extend 'Text'
 
@@ -17,7 +19,19 @@ Text.override('add', function (super, txt, onTop)
     end)
     return txt
 end)
+Text.applyMarkup = Method.PUBLIC(function (text, input, rules)
+    Object.waitingList.add(function ()
+        TextUtil.applyMarkup(text.name, input, rules)
+    end)
+    return text
+end)
 
+Text.font = FieldStatus.PUBLIC('default', function (V, text, F)
+    text.font = V
+    Object.waitingList.add(function ()
+        setTextFont(text.name, V)
+    end)
+end, 'vcr.ttf')
 Text.new = function (x, y, fieldWidth, text, size, color, font)
     local this = Text.create(x, y, 'DO NOT INITIALIZE')
     Text.INITIALIZE_FUNCTION(this.name, x, y, fieldWidth, text)

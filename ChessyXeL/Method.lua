@@ -13,5 +13,3 @@ local Method = Enum {
 }
 
 return Method
-
---- ABANDONED

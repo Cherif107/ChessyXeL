@@ -263,6 +263,7 @@ Class = {
             create = function (...)
                 local instance = {
                     __type = class.className,
+                    __isClassInstance = true,
                     regularFields = {},
                     privateAccess = false,
                 }
@@ -276,10 +277,16 @@ Class = {
             end,
             extend = function (className)
                 local newClass = Class(className)
-                newClass.__type = class.className
                 rawset(newClass, 'additionalInstanceMetatable', rawget(class, 'additionalInstanceMetatable'))
                 newClass.create = function (...)
-                    return setmetatable(class.new(...), newClass.instanceMeta)
+                    local p = setmetatable(class.new(...), newClass.instanceMeta)
+                    p.__type = newClass.className
+                    for field, F in pairs(newClass.classVariables) do
+                        if p.regularFields[field] == nil then
+                            p.regularFields[field] = F.value
+                        end
+                    end
+                    return p
                 end
 
                 for field, F in pairs(class.classVariables) do

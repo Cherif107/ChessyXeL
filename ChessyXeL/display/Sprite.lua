@@ -3,6 +3,8 @@ local ObjectField = require 'ChessyXeL.display.object.Field'
 local FieldStatus = require 'ChessyXeL.FieldStatus'
 local Method = require 'ChessyXeL.Method'
 local Color = require 'ChessyXeL.util.Color'
+local HScript = require 'ChessyXeL.hscript.HScript'
+local SpriteUtil = require 'ChessyXeL.hscript.SpriteUtil'
 
 ---@class display.Sprite:display.object.Object A Class that makes sprites and returns them as Objects
 local Sprite = Object.extend 'Sprite'
@@ -23,7 +25,7 @@ Sprite.animation = FieldStatus.PUBLIC(function(I, F)
     end
     return I.animation
 end, 'default', '?')
-Sprite.color = FieldStatus.PUBLIC(function(I, F) return Color(Object.waitingList.approve(I.color, 0)) end, function (V, I, F)
+Sprite.color = FieldStatus.PUBLIC(function(I, F) local col = Color(getProperty(I.name..'.color')) return col end, function (V, I, F)
     I.set('color', Color.parseColor(V))
 end, Color.WHITE, false)
 Sprite.camera = FieldStatus.PUBLIC('default', function (V, I, F)
@@ -107,8 +109,29 @@ Sprite.playAnim = Method.PUBLIC(function (sprite, name, forced, reversed, startF
     return sprite
 end)
 
+Sprite.drawGradient = Method.PUBLIC(function (sprite, width, height, colors, chunkSize, rotation, interpolate)
+    for i = 1, #colors do
+        colors[i] = Color.parseColor(colors[i])
+    end
+    Object.waitingList.add(function ()
+        SpriteUtil.drawGradient(sprite.name, width, height, colors,  chunkSize, rotation, interpolate)
+    end)
+    return sprite
+end)
+Sprite.drawPolygon = Method.PUBLIC(function (sprite, vertices, fillColor, lineStyle, drawStyle)
+    Object.waitingList.add(function ()
+        SpriteUtil.drawPolygon(sprite.name, vertices, fillColor, lineStyle, drawStyle)
+    end)
+    return sprite
+end)
+
 -- Sprite.getMidpoint()
 
+Sprite.fromTag = Method.PUBLIC(function (Self, tag)
+    local sprite = Sprite()
+    sprite.name = tag
+    return sprite
+end, true)
 Sprite.new = function (x, y, a)
     local sprite = Sprite.create()
     if a ~= 'DO NOT INITIALIZE' then

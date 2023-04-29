@@ -1,6 +1,7 @@
 ---@class tweens.Ease Contains a list of Eases
 local Eases = {}
 Eases = {
+    PI2 = math.pi / 2,
     EL = 2 * math.pi / 0.45,
 	B1 = 1 / 2.75,
 	B2 = 2 / 2.75,
@@ -75,8 +76,8 @@ Eases = {
     smootherStepOut = function(v) return 2 * Eases.smootherStepInOut(v/2+0.5)-1 end,
     smootherStepInOut = function(v) return (v^3)*(v*(v*6-15)+10) end,
 
-    sineIn = function(v) return -math.cos(math.pi2*v)+1 end,
-    sineOut = function(v) return math.sin(math.pi2*v) end,
+    sineIn = function(v) return -math.cos(Eases.PI2 * v)+1 end,
+    sineOut = function(v) return math.sin(Eases.PI2 * v) end,
     sineInOut = function(v) return -math.cos(math.pi*v)/2+0.5 end,
 
     quadIn = function(v) return v^2 end,
