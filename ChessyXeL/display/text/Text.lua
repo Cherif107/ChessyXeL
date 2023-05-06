@@ -13,6 +13,11 @@ Text.INITIALIZE_FUNCTION = function (tag, x, y, width, text)
         makeLuaText(tag, text, width, x, y)
     end)
 end
+Text.fromTag = Method.PUBLIC(function(Self, tag)
+    local txt = Text()
+    txt.name = tag
+    return txt
+end,  true)
 Text.override('add', function (super, txt, onTop)
     Object.waitingList.add(function ()
         addLuaText(txt.name, onTop)

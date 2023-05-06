@@ -3,18 +3,6 @@ local Field = require "ChessyXeL.Field"
 local Method = require "ChessyXeL.Method"
 local FieldStatus = require "ChessyXeL.FieldStatus"
 
-local function copy(original)
-    local t = {}
-    for key, value in pairs(original) do
-        if type(value) == "table" then
-            t[key] = copy(value)
-        else
-            t[key] = value
-        end
-    end
-    return t
-end
-
 ---@class Class A Module that returns a Table that behaves like Classes with features like Private / Public / Static Fields and Getters / Setters.
 ---[[ FIELDS:START ]]---
 ---@field public className string The name of the Class

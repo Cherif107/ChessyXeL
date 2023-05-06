@@ -9,10 +9,10 @@ local Point = Class 'Point'
 Point.EPSILON = FieldStatus.PUBLIC('default', 'default', 0.0000001, true)
 Point.EPSILON_SQUARED = FieldStatus.PUBLIC('default', 'default', Point.EPSILON * Point.EPSILON, true)
 
-Point.pool = FieldStatus.NORMAL('default', 'default', Pool(Point), true)
-Point._point1 = FieldStatus.NORMAL('default', 'default', Point(), true)
-Point._point2 = FieldStatus.NORMAL('default', 'default', Point(), true)
-Point._point3 = FieldStatus.NORMAL('default', 'default', Point(), true)
+Point.pool = FieldStatus.PUBLIC('default', 'default', Pool(Point), true)
+Point._point1 = FieldStatus.PUBLIC('default', 'default', Point(), true)
+Point._point2 = FieldStatus.PUBLIC('default', 'default', Point(), true)
+Point._point3 = FieldStatus.PUBLIC('default', 'default', Point(), true)
 
 Point._weak = FieldStatus.NORMAL('default', 'default', false)
 Point._inPool = FieldStatus.NORMAL('default', 'default', false)
@@ -23,6 +23,21 @@ Point.y = FieldStatus.PUBLIC('default', function (V, I, F)
     I.y = V
 end, 0)
 
+Point.lengthSquared = FieldStatus.PUBLIC(function (I, F)
+    return I.x * I.x + I.y * I.y
+end)
+Point.length = FieldStatus.PUBLIC(function (I, F)
+    return math.sqrt(I.lengthSquared)
+end)
+Point.radians = FieldStatus.PUBLIC(function(I)
+    return 0
+end, function (V, I, F)
+    local len = I.length
+    I.x = len * math.cos(V)
+    I.y = len * math.sin(V)
+    -- I.radians = V
+    return V
+end, 0)
 Point.dx = FieldStatus.PUBLIC(function ()
     
 end, 'never')
@@ -30,6 +45,10 @@ Point.dy = FieldStatus.PUBLIC(function ()
     
 end, 'never')
 
+Point.destroy = Method.PUBLIC(function(p)
+    p.x = 0
+    p.y = 0
+end)
 Point.set = Method.PUBLIC(function (point, x, y)
     point.x = x or 0
     point.y = y or 0
@@ -51,6 +70,31 @@ Point.equals = Method.PUBLIC(function (I, point)
     local res = Math.equal(I.x, point.x) and Math.equal(I.y, point.y)
     point.putWeak()
     return res
+end)
+Point.copyFrom = Method.PUBLIC(function (I, point)
+    I.set(point.x, point.y)
+    point.putWeak()
+    return I
+end)
+Point.subtract = Method.PUBLIC(function (I, x, y)
+    I.x = I.x - x
+    I.y = I.y - y
+    return I
+end)
+Point.subtractPoint = Method.PUBLIC(function (I, point)
+    I = I.subtract(point.x, point.y)
+    point.putWeak()
+    return I
+end)
+Point.pivotRadians = Method.PUBLIC(function (I, pivot, radians)
+    Point._point1.copyFrom(I).subtractPoint(pivot)
+    Point._point1.radians = Point._point1.radians + radians
+    I.set(Point._point1.x + pivot.x, Point._point1.y + pivot.y)
+    pivot.putWeak()
+    return I
+end)
+Point.pivotDegrees = Method.PUBLIC(function (I, pivot, deg)
+    return I.pivotRadians(pivot, math.rad(deg))
 end)
 
 

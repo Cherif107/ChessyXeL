@@ -13,7 +13,7 @@ Pool.length = FieldStatus.PUBLIC(function (pool)
 end, 'never')
 
 Pool.get = Method.PUBLIC(function (pool)
-    if pool._count == 0 then
+    if pool._count < 2 then
         return pool._class.new()
     end
     pool._count = pool._count - 1

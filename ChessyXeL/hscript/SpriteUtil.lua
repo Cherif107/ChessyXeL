@@ -18,6 +18,12 @@ function SpriteUtil.load()
             function drawPolygon(tag:String, vertices:Array<Dynamic>, ?fillColor:Any, ?lineStyle, ?drawStyle){
                 FlxSpriteUtil.drawPolygon(game.modchartSprites.get(tag), vertices, fillColor, lineStyle, drawStyle);
             }
+            function drawCurve(tag:String, startX:Float, startY:Float, endX:Float, endY:Float, controlX:Float, controlY:Float, ?fillColor:Any, ?lineStyle, ?drawStyle){
+                FlxSpriteUtil.drawCurve(game.modchartSprites.get(tag), startX, startY, endX, endY, controlX, controlY, fillColor, lineStyle, drawStyle);
+            }
+            function alphaMask(tag:String, tag2:String){
+                FlxSpriteUtil.alphaMaskFlxSprite(game.modchartSprites.get(tag), game.modchartSprites.get(tag2), game.modchartSprites.get(tag));
+            }
         ]]
         SpriteUtil.loaded = true
     end
@@ -29,22 +35,15 @@ function SpriteUtil.drawGradient(spriteTag, width, height, colors, chunkSize, ro
 end
 function SpriteUtil.drawPolygon(spriteTag, vertices, fillColor, lineStyle, drawStyle)
     SpriteUtil.load()
-    HScript.call('drawPolygon', spriteTag, vertices, fillColor, lineStyle, drawStyle)
+    HScript.call('drawPolygon', spriteTag, vertices, bit.tobit(fillColor), lineStyle, drawStyle)
 end
-
-function SpriteUtil.set(sprite, variable, value)
-    HScript.execute('game.modchartSprites.get("'..sprite..'").'..variable..' = '..HScript.parseValue(value)..';\n')
+function SpriteUtil.drawCurve(spriteTag, startX, startY, endX, endY, controlX, controlY, fillColor, lineStyle, drawStyle)
+    SpriteUtil.load()
+    HScript.call('drawCurve', spriteTag, startX, startY, endX, endY, controlX, controlY, fillColor, lineStyle, drawStyle)
 end
-function SpriteUtil.override(sprite, Function, FunctionDeclaration, Arguments)
-    HScript.addLibrary('Reflect')
-    HScript.execute(
-        'var spr = game.modchartSprites.get("'..sprite..'");\n'..
-        'var superFunc = spr.'..Function..';\n'..
-        'var newFunc = '..FunctionDeclaration..';\n'..
-        'spr.'..Function..' = '..'function('..(#Arguments > 0 and '?'..table.concat(Arguments, ', ?') or '')..'){'..
-            'return newFunc(superFunc'..(#Arguments > 0 and ', '..table.concat(Arguments, ', ') or '')..');\n'..
-        '};'
-    )
+function SpriteUtil.alphaMask(spriteTag, spriteTag2)
+    SpriteUtil.load()
+    HScript.call('alphaMask', spriteTag, spriteTag2)
 end
 
 

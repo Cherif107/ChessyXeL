@@ -8,12 +8,12 @@ local Signals = {
     preDraw = Signal(),
     postDraw = Signal(),
 
-    focusLost = Signal(),
-    focusGained = Signal(),
+    -- focusLost = Signal(),
+    -- focusGained = Signal(),
 }
 
-local O = onCreate
-function onCreate()
+local O = onCreatePost
+function onCreatePost()
     luaDebugMode  = true
     if O then O() end
     for name, signal in pairs(Signals) do

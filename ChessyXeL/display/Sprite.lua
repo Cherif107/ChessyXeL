@@ -109,6 +109,10 @@ Sprite.playAnim = Method.PUBLIC(function (sprite, name, forced, reversed, startF
     return sprite
 end)
 
+Sprite.alphaMask = Method.PUBLIC(function(sprite, sprite2)
+    SpriteUtil.alphaMask(sprite.name, sprite2.name)
+    return sprite
+end)
 Sprite.drawGradient = Method.PUBLIC(function (sprite, width, height, colors, chunkSize, rotation, interpolate)
     for i = 1, #colors do
         colors[i] = Color.parseColor(colors[i])
@@ -124,11 +128,17 @@ Sprite.drawPolygon = Method.PUBLIC(function (sprite, vertices, fillColor, lineSt
     end)
     return sprite
 end)
+Sprite.drawCurve = Method.PUBLIC(function (sprite, startX, startY, endX, endY, controlX, controlY, fillColor, lineStyle, drawStyle)
+    Object.waitingList.add(function ()
+        SpriteUtil.drawCurve(sprite.name, startX, startY, endX, endY, controlX, controlY, fillColor, lineStyle, drawStyle)
+    end)
+    return sprite
+end)
 
 -- Sprite.getMidpoint()
 
 Sprite.fromTag = Method.PUBLIC(function (Self, tag)
-    local sprite = Sprite()
+    local sprite = Self()
     sprite.name = tag
     return sprite
 end, true)

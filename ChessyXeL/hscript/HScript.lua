@@ -1,21 +1,16 @@
-local Object = require "ChessyXeL.display.object.Object"
 require "ChessyXeL.util.StringUtil"
+local Signal = require 'ChessyXeL.Signal'
+local Sprite, Text, Object
 
 ---@class hscript.HScript
 local HScript = {
     functions = {},
-    shouldInit = true,
     loadedVariables = {},
-    getFunctionArguments = function(func)
-        local argumentss = {}
-        for i = 1, debug.getinfo(func).nparams do
-            table.insert(argumentss, debug.getlocal(func, i))
-        end
-        return argumentss
-    end,
+    shouldInitialize = true,
+
     getImports = function(code)
         local imports = {}
-        for imp in code:gmatch("import%s+([%w%.]+);") do
+        for imp in code:gmatch("import%s+([%w%._]+);") do
             imports[#imports + 1] = imp
         end
         return imports
@@ -30,7 +25,7 @@ local HScript = {
         end
         return count == #table
     end,
-    executeUnsafe = function(code)
+    executeUnsafe = function (code)
         return runHaxeCode(code)
     end,
     addLibrary = function(library)
@@ -39,334 +34,342 @@ local HScript = {
 
         addHaxeLibrary(importedLibrary, table.concat(splittedLibrary, "."))
         return importedLibrary, true
-    end
+    end,
+    signals = Signal(),
 }
-HScript.variables =
-    setmetatable(
-    {},
-    {
-        __index = function(t, k)
-            HScript.addLibrary("FunkinLua")
-            return HScript.getValue("FunkinLua.hscript.variables.get(" .. HScript.parseValue(k) .. ")")
-        end,
-        __newindex = function(t, k, v)
-            HScript.shouldInit = true
-            HScript.addLibrary("FunkinLua")
-            if type(v) == "function" then
-                HScript.setFunction(k, v)
-            else
-                HScript.executeUnsafe(
-                    "FunkinLua.hscript.variables.set(" ..
-                        HScript.parseValue(k) .. ", " .. HScript.parseValue(v) .. ");\n"
-                )
-            end
-            HScript.loadedVariables[k] = nil
-        end
-    }
-)
-
-function HScript.parseValue(value)
-    local type = type(value)
-    if type == "string" then
-        return '"' .. value .. '"'
-    elseif type == "table" then
-        if value.__type == "CHESSYXEL_HSCRIPT_NEW_CALL" then
-            return "new " .. value.class .. "(" .. table.concat(value.arguments, ", ") .. ")"
-        elseif value.__type == "Color" then
-            return value.value
-        elseif value.__type == "Matrix3" then
-            HScript.addLibrary('openfl.geom.Matrix')
-            return HScript.parseValue(HScript.newInstance('Matrix', value.a, value.b, value.c, value.d, value.tx, value.ty))
-        elseif value.__type == "Sprite" or value.__type == 'SkewedSprite' or value.__type == 'Text' or value.__type == 'Object' then
-            return 'game.getLuaObject("' .. value.name .. '")'
-        elseif value.__type == "Point" then
-            HScript.addLibrary("flixel.math.FlxPoint")
-            return "new FlxPoint(" .. value.x .. ", " .. value.y .. ")"
-        elseif value.__type == "TextFormat" then
-            HScript.addLibrary("flixel.text.FlxTextFormat")
-            HScript.push(
-                "CHESSYXEL_TEXTFORMAT_VAR",
-                HScript.newInstance("FlxTextFormat", value.fontColor, value.bold, value.italic, value.borderColor)
-            )
-            if value.size then
-                HScript.getPushed("CHESSYXEL_TEXTFORMAT_VAR", "format.size", value.size)
-            end
-            return 'removePushed("CHESSYXEL_TEXTFORMAT_VAR")'
-        elseif value.__type == "TextFormatMarkerPair" then
-            HScript.addLibrary("flixel.text.FlxTextFormatMarkerPair")
-            return "new FlxTextFormatMarkerPair(" ..
-                HScript.parseValue(value.format) .. ", " .. HScript.parseValue(value.marker) .. ")"
-        end
-        return HScript.parseTable(value)
-    elseif type == "nil" then
-        return "null"
+HScript.run = function (fun)
+    if callOnHscript then
+        return fun()
     else
-        return tostring(value)
-    end
-end
-function HScript.parseTable(table)
-    local result = "[\n"
-    if HScript.isArray(table) then
-        for index = 1, #table do
-            result = result .. HScript.parseValue(table[index]) .. ", \n"
-        end
-    else
-        for key, value in pairs(table) do
-            result = result .. HScript.parseValue(key) .. " => " .. HScript.parseValue(value) .. ", \n"
-        end
-    end
-    return result .. "]"
-end
-
-function HScript.checkForMap(value)
-    if type(value) == "table" then
-        if value[1] == "DEFAULT_HSCRIPT_MAP_CONVERTED_TO_LUA_FROM_ARRAY" then
-            local map = {}
-            for i = 2, #value do
-                map[value[i][1]] = value[i][2]
-            end
-            return map
-        elseif value[1] == "CHESSYXEL_DEFAULT_HSCRIPT_TO_SPRITE_CONVERTION" then
-            local Sprite = require "ChessyXeL.display.Sprite"
-            local spr = Sprite.create()
-            spr.name = value[2]
-            return spr
-        elseif value[1] == "CHESSYXEL_DEFAULT_HSCRIPT_TO_OBJECT_CONVERTION" then
-            debugPrint('yeah!')
-            local obj = Object()
-            obj.name = value[2]
-            return obj
-        end
-    end
-    return value
-end
-function HScript.getValue(value)
-    -- [[ normalize values and return them ]] --
-    return HScript.checkForMap(
-        HScript.executeUnsafe("var v = " .. value .. ";\n" .. [[
-            return parseValue(v);
-        ]])
-    )
-end
-
-local function contains(ta, v)
-    for a, b in next, ta, nil do
-        if b == v then
-            return true
-        end
+        return HScript.signals.add(fun)
     end
 end
 
-function HScript.unpack(table, index)
-    index = index or 1
-    if table[index] ~= nil then
-        return HScript.parseValue(table[index]) ..
-            ((index ~= #table) and ", " .. HScript.unpack(table, index + 1) or "")
-    end
-    return ""
-end
-HScript.setFunction = function(functionName, func, optionalArguments)
-    HScript.shouldInit = true
-    optionalArguments = optionalArguments or {}
-    local arguments = HScript.getFunctionArguments(func)
-    local args = {}
-
-    if optionalArguments == "all" then
-        optionalArguments = arguments
-    end
-    for i = 1, #arguments do
-        if contains(optionalArguments, arguments[i]) then
-            args[i] = "?" .. arguments[i]
-        else
-            args[i] = arguments[i]
-        end
-    end
-
-    HScript.functions[functionName] = {
-        arguments = table.concat(arguments, ", "),
-        args = table.concat(args, ", "),
-        func = func
-    }
-    HScript.initialize()
+local o = onCreatePost
+function onCreatePost()
+    if o then o() end
+    HScript.signals.dispatch()
 end
 
-local doFirstInit = true
-HScript.initialize = function()
-    local str = ''
-    if doFirstInit then
-        HScript.addLibrary("Std")
-        HScript.addLibrary("Reflect")
-        HScript.addLibrary("haxe.ds.StringMap")
-        HScript.addLibrary("haxe.ds.IntMap")
-        HScript.addLibrary("ModchartSprite")
-        HScript.addLibrary("Type")
-        for _, library in pairs({"String", "Int", "Float", "Bool", "Array"}) do
+HScript.variables = setmetatable({}, {
+    __index = function (t, k)
+        return HScript.get(k)
+    end,
+    __newindex = function (t, k, v)
+        return HScript.set(k, v)
+    end,
+})
+
+HScript.initialize = function ()
+    if HScript.shouldInitialize then
+        for _, library in pairs({"String", "Int", "Float", "Bool", "Array", 'Std', 'Reflect', 'Type', 'haxe.ds.StringMap', 'haxe.ds.ObjectMap', 'haxe.ds.IntMap', 'flixel.text.FlxText', 'ModchartText', 'ModchartSprite', 'llua.Lua_helper', 'FunkinLua'}) do
             HScript.addLibrary(library)
         end
-        HScript.variables["CHESSYXEL_OBJECT_TAG"] = Object.GlobalObjectTag
-        HScript.variables["CHESSYXEL_OBJECT_NUMERATOR"] = 0
-        str =
-            [[
-            TEMPORARY_HSCRIPT_VARIABLE = null;
-            HSCRIPT_TEMPORARY_VARIABLES = [];
-            pushIndex = 0;
-            function pushVariable(name, value){
-                pushIndex = HSCRIPT_TEMPORARY_VARIABLES.length;
-                HSCRIPT_TEMPORARY_VARIABLES.push([name, value]);
+        local codeToRun = [==[
+            __hscript__pushed__variables__ = [];
+            __hscript__push__index__ = 0;
+            __hscript__initialized_variables = new StringMap();
+            __chessyxel__hscript__object__numerator = 0;
+    
+            function pushVariable(name:String, value:Dynamic = null){
+                __hscript__push__index__ = __hscript__pushed__variables__.length;
+                __hscript__pushed__variables__.push([name, value]);
             }
-            function getVariable(name){
-                for (i in 0...HSCRIPT_TEMPORARY_VARIABLES.length){
-                    var variable = HSCRIPT_TEMPORARY_VARIABLES[i];
+            function getCurPushed(){
+                return __hscript__pushed__variables__[__hscript__push__index__][1];
+            }
+            function getPushed(name){
+                for (i in 0...__hscript__pushed__variables__.length){
+                    var variable = __hscript__pushed__variables__[i];
                     if (variable[0] == name){
                         return variable[1];
                     }
                 }
             }
-            function getPushed(){
-                return HSCRIPT_TEMPORARY_VARIABLES[pushIndex][0];
+            function setOnPushed(name, field, value){
+                var splitted = field.split('.');
+                if (splitted.length > 1){
+                    var object = getPushed(name);
+                    var toSet = splitted.pop();
+                    for (f in splitted){
+                        object = Reflect.field(object, f);
+                    }
+                    Reflect.setProperty(object, toSet, parseLua(value));
+                }else{
+                    Reflect.setProperty(getPushed(name), field, parseLua(value));
+                }
             }
             function removePushed(name){
-                for (i in 0...HSCRIPT_TEMPORARY_VARIABLES.length){
-                    if (HSCRIPT_TEMPORARY_VARIABLES[i][0] == name){
-                        var value = HSCRIPT_TEMPORARY_VARIABLES[i][1];
-                        HSCRIPT_TEMPORARY_VARIABLES.splice(i, 1);
+                for (i in 0...__hscript__pushed__variables__.length){
+                    if (__hscript__pushed__variables__[i][0] == name){
+                        var value = __hscript__pushed__variables__[i][1];
+                        __hscript__pushed__variables__.splice(i, 1);
+                        __hscript__push__index__ -= 1;
                         return value;
                     }
                 }
             }
-            function isMap(v){
-                if (Std.isOfType(v, StringMap) || Std.isOfType(v, IntMap))
-                    return true;
+        
+            ValueType = Type.resolveEnum('ValueType');
+        
+            function addCallback(name:String = 'test', F:Dynamic){
+                for (lua in game.luaArray){
+                    Lua_helper.add_callback(lua.lua, name, F);
+                }
+                return true;
             }
-            function parseValue(v){
-                if (Std.isOfType(v, Float) || Std.isOfType(v, Int) || Std.isOfType(v, String) || Std.isOfType(v, Bool))
-                    return v;
-                if (Std.isOfType(v, Array)){
-                    var q = [];
-                    for (i in 0...v.length)
-                        q[i] = parseValue(v[i]);
-                    return q;
+        
+            function isMap(v){
+                if (Std.isOfType(v, StringMap) || Std.isOfType(v, IntMap)){
+                    return true;
                 }
-                if (isMap(v)){
-                    var q = ["DEFAULT_HSCRIPT_MAP_CONVERTED_TO_LUA_FROM_ARRAY"];
-                    for (k in v.keys())
-                        q.push([k, v.get(k)]);
-                    return q;
+            }
+            
+            function parseLua(value:Dynamic = null){
+                if (Type.typeof(value) == ValueType.TObject){
+                    var map = null;
+                    for (f in Reflect.fields(value)){
+                        var val = Reflect.field(value, f);
+                        if (map == null){
+                            if (Std.isOfType(f, String)){
+                                map = new StringMap();
+                            }else{
+                                map = new IntMap();
+                            }
+                        }
+                        map[f] = parseLua(val);
+                    }
+                    return map;
                 }
-                if (Std.isOfType(v, ModchartSprite)){
-                    CHESSYXEL_OBJECT_NUMERATOR += 1;
-
-                    var tag = "CHESSYXEL_HSCRIPT_SPRITE_" + CHESSYXEL_OBJECT_TAG + '_' + CHESSYXEL_OBJECT_NUMERATOR;
-                    game.modchartSprites.set(tag, v);
-                    return ["CHESSYXEL_DEFAULT_HSCRIPT_TO_SPRITE_CONVERTION", tag];
+                if (Std.isOfType(value, Array)){
+                    for (i in 0...value.length){
+                        value[i] = parseLua(value[i]);
+                    }
+                    var token = value[0];
+                    switch(token){
+                        case '__chessyxel__hscript__sprite__conversion__':
+                            return game.modchartSprites.get(value[1]);
+                        case '__chessyxel__hscript__text__conversion__':
+                            return game.modchartTexts.get(value[1]);
+                        case '__chessyxel__hscript__object__conversion__':
+                            return game.variables.get(value[1]);
+                        case '__chessyxel__hscript__textformat__convertion__':
+                            var textFormat = new FlxTextFormat(value[1], value[2], value[3], value[4]);
+                            if (value[5] != null){
+                                textFormat.format.size = value[5];
+                            }
+                            return textFormat;
+                        case '__chessyxel__hscript__textformatmarkerpair__conversion__':
+                            return new FlxTextFormatMarkerPair(value[1], value[2]);
+                        case '__chessyxel__hscript__point__conversion__':
+                            return new FlxPoint(value[1], value[2]);
+                        case '__chessyxel__hscript__matrix__conversion__':
+                            return new Matrix(value[1], value[2], value[3], value[4], value[5], value[6]);
+                        case '__chessyxel__function__convertion__':
+                            return Reflect.makeVarArgs(function(arguments){
+                                arguments.insert(0, value[1]);
+                                return game.callOnLuas('__chessyxel__callbacks__hscript__callontable__', arguments);
+                            });
+                    }
                 }
-                if (Std.isOfType(v, FlxSprite)){
-                    CHESSYXEL_OBJECT_NUMERATOR += 1;
-
-                    var tag = "CHESSYXEL_HSCRIPT_SPRITE_" + CHESSYXEL_OBJECT_TAG + '_' + CHESSYXEL_OBJECT_NUMERATOR;
-                    setVar(tag, v);
-                    return ["CHESSYXEL_DEFAULT_HSCRIPT_TO_SPRITE_CONVERTION", tag];
+                return value;
+            }
+            function toLua(value:Dynamic = null){
+                if (isMap(value)){
+                    var OM = {};
+                    for (K in value.keys()){
+                        Reflect.setField(OM, K, toLua(value.get(K)));
+                    }
+                    return OM;
                 }
-                if (v != null){
-                    CHESSYXEL_OBJECT_NUMERATOR += 1;
-
-                    var tag = "CHESSYXEL_HSCRIPT_OBJECT_" + CHESSYXEL_OBJECT_TAG + '_' + CHESSYXEL_OBJECT_NUMERATOR;
-                    setVar(tag, v);
-                    return ["CHESSYXEL_DEFAULT_HSCRIPT_TO_OBJECT_CONVERTION", tag];
+                if (Std.isOfType(value, FlxSprite) || Std.isOfType(value, ModchartSprite)){
+                    __chessyxel__hscript__object__numerator += 1;
+                    var tag = 'CHESSYXEL_HSCRIPT_OBJECT_'+__chessyxel__hscript__object__numerator; 
+                    game.variables.set(tag, value);
+                    return toLua(["__chessyxel__hscript__sprite__conversion__toLua", tag]);
+                }
+                if (Std.isOfType(value, FlxText) || Std.isOfType(value, ModchartText)){
+                    __chessyxel__hscript__object__numerator += 1;
+                    var tag = 'CHESSYXEL_HSCRIPT_OBJECT_'+__chessyxel__hscript__object__numerator; 
+                    game.variables.set(tag, value);
+                    return toLua(["__chessyxel__hscript__text__conversion__toLua", tag]);
+                }
+                if (Std.isOfType(value, String) || Std.isOfType(value, Array) || Std.isOfType(value, Int) || Std.isOfType(value, Float) || Std.isOfType(value, Bool) || value == null || Reflect.isFunction(value)){
+                    return value;
+                }
+                if (value != null){
+                    __chessyxel__hscript__object__numerator += 1;
+                    var tag = 'CHESSYXEL_HSCRIPT_OBJECT_'+__chessyxel__hscript__object__numerator; 
+                    game.variables.set(tag, value);
+                    return toLua(["__chessyxel__hscript__object__conversion__toLua", tag]);
+                }
+            }
+        
+            function getOnHscript(name:String){
+                if (__hscript__initialized_variables.exists(name) && __hscript__initialized_variables[name] != null){
+                    return __hscript__initialized_variables[name];
+                }
+                var splitted = name.split('.');
+                if (splitted.length > 1){
+                    var object = FunkinLua.hscript.variables.get(splitted.shift());
+                    for (f in splitted){
+                        object = Reflect.getProperty(object, f);
+                    }
+                    var p = toLua(object);
+                    if (Reflect.isFunction(object)){
+                        __hscript__initialized_variables[name] = p;
+                    }
+                    return p;
+                }else{
+                    var p = toLua(FunkinLua.hscript.variables.get(name));
+                    if (Reflect.isFunction(p)){
+                        __hscript__initialized_variables[name] = p;
+                    }
+                    return p;
                 }
                 return null;
             }
-            function debugPrint(?txt1, ?txt2, ?txt3, ?txt4, ?txt5, ?color){
-                if (txt1 != null) txt1 += ', '; else txt1 = '';
-                if (txt2 != null) txt2 += ', '; else txt2 = '';
-                if (txt3 != null) txt3 += ', '; else txt3 = '';
-                if (txt4 != null) txt4 += ', '; else txt4 = '';
-                if (txt5 != null) txt5 += ', '; else txt5 = '';
-                if (color == null) color = 0xFFffffff;
-                game.addTextToDebug((txt1+txt2+txt3+txt4+txt5).substr(0, -2), color);
+            function setOnHscript(name:String, value:Dynamic = null){
+                var splitted = name.split('.');
+                if (splitted.length > 1){
+                    var object = FunkinLua.hscript.variables.get(splitted.shift());
+                    var toSet = splitted.pop();
+                    for (f in splitted){
+                        object = Reflect.getProperty(object, f);
+                    }
+                    Reflect.setProperty(object, toSet, parseLua(value));
+                }else{
+                    FunkinLua.hscript.variables.set(name, parseLua(value));
+                }
             }
-            function getCallback(funcName, arguments){
-                var argStuff = [funcName];
-                for (v in arguments)
-                    argStuff.push(v);
-
-                game.callOnLuas("CALL_HSCRIPT_FROM_TABLE", argStuff);
-                var v = TEMPORARY_HSCRIPT_VARIABLE;
-                TEMPORARY_HSCRIPT_VARIABLE = null;
-                return v;
+        
+            function addHScriptFunction(functionName, luaName){
+                setOnHscript(functionName, Reflect.makeVarArgs(function(arguments){
+                    arguments.insert(0, luaName);
+                    return game.callOnLuas('__chessyxel__callbacks__hscript__callontable__', [luaName]);
+                }));
             }
-        ]]..'\n'
+            addCallback('setOnHscript', setOnHscript);
+            addCallback('getOnHscript', function(name:String){
+                var p = getOnHscript(name);
+                if (Reflect.isFunction(p)){
+                    return ['__chessyxel__hscript__function__conversion__toLua', name];
+                }
+                return p;
+            });
+            addCallback('callOnHscript', function(name:String, ?arguments = []){
+                if (getOnHscript(name) != null){
+                    return toLua(Reflect.callMethod(null, getOnHscript(name), parseLua(arguments)));
+                }
+            });
+        ]==]
+        HScript.shouldInitialize = false
+        HScript.executeUnsafe(codeToRun)
     end
-    if HScript.shouldInit then
-        for fName, functionStuff in next, HScript.functions, nil do
-            if not HScript.functions[fName].inited then
-                str =
-                    str ..
-                    "function " ..
-                        fName ..
-                            "(" ..
-                                functionStuff.args ..
-                                    '){ return getCallback("' .. fName .. '", [' .. functionStuff.arguments .. "]); }\n"
-                HScript.functions[fName].inited = true
-            end
-        end
-        for var, value in next, HScript.variables, nil do
-            if HScript.loadedVariables[var] == nil then
-                str = str .. var .. " = " .. HScript.parseValue(value) .. ";\n"
-                HScript.loadedVariables[var] = nil
-                HScript.loadedVariables[var] = value
-            end
-        end
-        HScript.executeUnsafe(str)
-        HScript.shouldInit = false
-    end
-    doFirstInit = false
 end
 
-HScript.setVariable = function(variable, value) --- for global variables ONLY
-    HScript.variables[variable] = value
+HScript.fromLua = function (value)
+    if type(value) == 'table' then
+        if value.__type == 'Color' then
+            return value.value
+        elseif value.__type == 'Sprite' or value.__type == 'SkewedSprite' then
+            return {'__chessyxel__hscript__sprite__conversion__', value.name}
+        elseif value.__type == 'Text' then
+            return {'__chessyxel__hscript__text__conversion__', value.name}
+        elseif value.__type == 'Object' then
+            return {'__chessyxel__hscript__object__conversion__', value.name}
+        elseif value.__type == 'TextFormat' then
+            HScript.addLibrary("flixel.text.FlxTextFormat")
+            return {'__chessyxel__hscript__textformat__convertion__', HScript.fromLua(value.fontColor), value.bold, value.italic, HScript.fromLua(value.borderColor), value.size}
+        elseif value.__type == 'TextFormatMarkerPair' then
+            HScript.addLibrary("flixel.text.FlxTextFormatMarkerPair")
+            return {'__chessyxel__hscript__textformatmarkerpair__conversion__', HScript.fromLua(value.format), HScript.fromLua(value.marker)}
+        elseif value.__type == 'Point' then
+            HScript.addLibrary('flixel.math.FlxPoint')
+            return {'__chessyxel__hscript__point__conversion__', value.x, value.y}
+        elseif value.__type == 'Matrix3' then
+            HScript.addLibrary('openfl.geom.Matrix')
+            return {'__chessyxel__hscript__matrix__conversion__', value.a, value.b, value.c, value.d, value.tx, value.ty}
+        else
+            for i = 1, #value do
+                value[i] = HScript.fromLua(value[i])
+            end
+        end
+    elseif type(value) == 'function' then
+        table.insert(HScript.functions, value)
+        return {'__chessyxel__function__convertion__', #HScript.functions}
+    end
+    return value
+end
+HScript.toLua = function (value)
+    if Sprite == nil then
+        Sprite = require 'ChessyXeL.display.Sprite'
+        Text = require 'ChessyXeL.display.text.Text'
+        Object = require 'ChessyXeL.display.object.Object'
+    end
+    if type(value) == 'table' then
+        if value[1] == '__chessyxel__hscript__sprite__conversion__toLua' then
+            return Sprite.fromTag(value[2])
+        elseif value[1] == '__chessyxel__hscript__text__conversion__toLua' then
+            return Text.fromTag(value[2])
+        elseif value[1] == '__chessyxel__hscript__object__conversion__toLua' then
+            local p = Object()
+            p.name = value[2]
+            return p
+        elseif value[1] == '__chessyxel__hscript__function__conversion__toLua' then
+            return function(...)
+                HScript.call(value[2], ...)
+            end
+        end
+        for i = 1, #value do
+            value[i] = HScript.toLua(value[i])
+        end
+    end
+    return value
+end
+HScript.call = function (Function, ...)
     HScript.initialize()
-end
-HScript.getVariable = function(variable) --- for global variables ONLY
-    return HScript.variables[variable]
-end
-HScript.push = function(name, value)
-    return HScript.call("pushVariable", name, value)
-end
-HScript.setOnPushed = function(name, field, value)
-    return HScript.executeUnsafe('getVariable("' .. name .. '").' .. field .. " = " .. HScript.parseValue(value) .. ";\n")
-end
-HScript.getPushed = function(name, field, value)
-    return HScript.executeUnsafe('return getPushed().' .. field .. " = " .. HScript.parseValue(value) .. ";\n")
-end
-HScript.getPushedByName = function(name)
-    return HScript.call("getVariable", name)
-end
-HScript.removePushed = function(name)
-    return HScript.call("removeVariable", name)
-end
-HScript.newInstance = function(class, ...)
-    local a = {...}
-    for i = 1, #a do
-        a[i] = HScript.parseValue(a[i])
+    local args = {...}
+    for i = 1, #args do
+        args[i] = HScript.fromLua(args[i])
     end
-    return {
-        __type = "CHESSYXEL_HSCRIPT_NEW_CALL",
-        class = class,
-        arguments = a
-    }
+    return HScript.run(function() HScript.toLua(callOnHscript(Function, args)) end)
 end
-HScript.call = function(func, ...)
-    return HScript.checkForMap(HScript.executeUnsafe(
-        "if (" .. func .. " != null){\n return parseValue(" .. func .. "(" .. HScript.unpack({...}) .. "));\n}\n"
-    ))
+HScript.set = function (variable, value)
+    HScript.initialize()
+    if type(value) == "function" then
+        return HScript.setFunction(variable, value)
+    end
+    return HScript.run(function() setOnHscript(variable, HScript.fromLua(value)) end)
+end
+HScript.get = function (variable)
+    HScript.initialize()
+    return HScript.run(function() HScript.toLua(getOnHscript(variable)) end)
+end
+HScript.pushVariable = function (name, value)
+    HScript.call('pushVariable', name, HScript.fromLua(value))
+end
+HScript.getCurPushed = function ()
+    return HScript.call('getCurPushed')
+end
+HScript.getPushed = function (name)
+    return HScript.call('getPushed', name)
+end
+HScript.setOnPushed = function (name, field, value)
+    HScript.call('setOnPushed', name, field, HScript.fromLua(value))
+end
+HScript.removePushed = function (name)
+    return HScript.call('removePushed', name)
+end
+HScript.setFunction = function (FunctionName, Function)
+    HScript.functions[FunctionName] = Function
+    HScript.call('addHScriptFunction', FunctionName, FunctionName)
 end
 
-function HScript.execute(code)
+HScript.execute = function (code)
     code = code:gsub("public var", "") -- replacing public var with an empty string will make it global
     local imports = HScript.getImports(code) -- get code imports
     code = code:gsub("import%s+.-\n", "") -- delete all imports
-
     for i = 1, #imports do
         HScript.addLibrary(imports[i])
     end
@@ -375,12 +378,11 @@ function HScript.execute(code)
     return HScript.executeUnsafe(code)
 end
 
-function CALL_HSCRIPT_FROM_TABLE(func, ...)
-    local v = HScript.functions[func].func(...)
-    HScript.setVariable("TEMPORARY_HSCRIPT_VARIABLE", v or nil)
-end
-function CANCEL_HSCRIPT_TEMPO_SET()
-    HScript.setVariable("TEMPORARY_HSCRIPT_VARIABLE", nil)
+function __chessyxel__callbacks__hscript__callontable__(Function, ...)
+    if HScript.functions[Function] then
+        return HScript.fromLua(HScript.functions[Function]() or nil)
+    end
+    return nil
 end
 
 return HScript
