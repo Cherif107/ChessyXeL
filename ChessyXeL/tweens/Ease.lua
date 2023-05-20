@@ -95,11 +95,6 @@ Eases = {
     cubeIn = function(v) return v^3 end,
     cubeOut = function(v) return 1+(v-1)*(v^2) end,
     cubeInOut = function(v) return v <= 0.5 and (v^3)*4 or 1+(v-1)*(v^2)*4 end,
-
-    testIn = function(v)
-        v = v-1
-        return -(Eases.E_A * math.pow(2, 10 * v) * math.cos(Eases.E_P * v));
-    end,
 }
 
 return Eases

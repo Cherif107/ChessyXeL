@@ -71,10 +71,8 @@ Stage = {
         if Stage.functions[Function] == nil then
             error('Stage Error: Callback ('..Function..') Does Not Exist')
         else
-            if #Stage.functions[Function] > 0 then
-                for index, func in pairs(Stage.functions[Function]) do
-                    func(...)
-                end
+            for index, func in pairs(Stage.functions[Function]) do
+                func(...)
             end
         end
     end

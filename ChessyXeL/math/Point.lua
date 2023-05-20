@@ -97,6 +97,11 @@ Point.pivotDegrees = Method.PUBLIC(function (I, pivot, deg)
     return I.pivotRadians(pivot, math.rad(deg))
 end)
 
+Point.floor = Method.PUBLIC(function (p)
+    p.x = math.floor(p.x)
+    p.y = math.floor(p.y)
+    return p
+end)
 
 Point.get = Method.PUBLIC(function (Self, x, y)
     local point = Self.pool.get().set(x or 0, y or 0)

@@ -23,7 +23,7 @@ Pool.put = Method.PUBLIC(function (pool, object)
     if object ~= nil then
         local i = TableUtil.indexOf(pool._pool, object)
         if i == -1 or i >= pool._count then
-            object.destroy()
+            -- object.destroy()
             pool._count = pool._count + 1
             pool._pool[pool._count] = object
         end
@@ -31,7 +31,7 @@ Pool.put = Method.PUBLIC(function (pool, object)
 end)
 Pool.putUnsafe = Method.PUBLIC(function (pool, object)
     if object ~= nil then
-        object.destroy()
+        -- object.destroy()
         pool._count = pool._count + 1
         pool._pool[pool._count] = object
     end

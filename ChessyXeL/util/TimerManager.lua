@@ -61,7 +61,7 @@ TimerManager.update = Method.PUBLIC(function (class, elapsed)
         end
         if (loopedTimers ~= nil) then
             while (#loopedTimers > 0) do
-                TableUtil.shift(loopedTimers).onLoopFinished()
+                table.remove(loopedTimers).onLoopFinished()
             end
         end
         class.privateAccess = O

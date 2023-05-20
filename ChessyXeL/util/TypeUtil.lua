@@ -12,5 +12,12 @@ local TypeUtil = {
             end
         end
         return type
+    end,
+    typeOfArray = function (array)
+        for i = 1, #array do
+            return type(array[i])
+        end
     end
 }
+
+return TypeUtil

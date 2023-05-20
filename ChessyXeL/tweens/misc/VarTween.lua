@@ -10,7 +10,7 @@ local VarTween = Tween.extend 'VarTween'
 
 VarTween._object = FieldStatus.NORMAL('default', 'default')
 VarTween._properties = FieldStatus.NORMAL('default', 'default')
-VarTween._propertyInfos = FieldStatus.NORMAL('default', 'default')
+VarTween._propertyInfos = FieldStatus.PUBLIC('default', 'default')
 
 VarTween.initializeVars = Method.NORMAL(function (tween)
     if type(tween._properties) ~= 'table' then

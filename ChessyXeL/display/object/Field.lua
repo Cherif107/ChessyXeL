@@ -8,30 +8,37 @@
 local Field = {}
 
 function Field.parseIndex(name, key)
-    return type(key) == 'number' and name..'['..key..']' or name..'.'..key or error('Error: Cannot Index with key of type "'..type(key)..'".')
+    if name ~= nil and #name > 0 then
+        return (type(key) == 'number' and name..'['..key..']' or name..'.'..key)
+    else
+        return key
+    end
 end
 
-function Field.new(name, get, set)
+function Field.new(name, get, set, isClassField, p)
     local field = {name = name, get = get, set = set, initializedFields = {}}
     field.rawAdd = function(k, value) rawset(field, k, value) end
     return setmetatable(field, {
         __newindex = function(this, key, value)
-            local f = Field.parseIndex(this.name, key)
-            local prop = getProperty(f)
+            local f = (isClassField and key or Field.parseIndex(this.name, key))
+            local prop = (isClassField and getPropertyFromClass(p, Field.parseIndex(this.name, key)) or getProperty(f))
             if prop == f and this.initializedFields[key] and this.initializedFields[key].set then
-                this.initializedFields[key].set(Field.parseIndex(this.name, key), value, key)
+                this.initializedFields[key].set(f, value, key)
             else
-                setProperty(f, value)
+                return (isClassField and setPropertyFromClass(p, Field.parseIndex(this.name, key), value) or setProperty(f, value))
             end
         end,
         __index = function(this, key)
-            local f = Field.parseIndex(this.name, key)
-            local prop = getProperty(f)
-            if prop == f then
-                local initedF = rawget(this, 'initializedFields')[key] or Field.new(Field.parseIndex(rawget(this, 'name'), key))
-                if initedF and rawget(initedF, get) then
-                    return rawget(initedF, get)(Field.parseIndex(rawget(this, 'name'), key), key)
+            if key == 'get' then return rawget(this, 'get') end
+            local f = (isClassField and key or Field.parseIndex(this.name, key))
+            local prop = (isClassField and getPropertyFromClass(p, Field.parseIndex(this.name, key)) or getProperty(f))
+
+            if prop == f or prop == Field.parseIndex(this.name, key) then
+                local initedF = rawget(this, 'initializedFields')[key] or Field.new(Field.parseIndex(this.name, key), nil, nil, isClassField, p)
+                if initedF and rawget(initedF, 'get') then
+                    return rawget(initedF, get)(f, key)
                 end
+                return initedF
             else
                 return prop
             end
@@ -39,6 +46,6 @@ function Field.new(name, get, set)
     })
 end
 
-return setmetatable(Field, {__call = function (t, name, get, set)
-    return Field.new(name, get, set)
+return setmetatable(Field, {__call = function (t, name, get, set, isClassField, p)
+    return Field.new(name, get, set, isClassField, p)
 end})

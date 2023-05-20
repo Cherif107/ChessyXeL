@@ -14,7 +14,8 @@ local Field = {
     ---@return Field
     new = function (status, n)
         local field = {
-            bypassed = false,
+            bypassedSet = false,
+            bypassedGet = false,
             status = status,
         }
         local function check(get, set, value, static, private)

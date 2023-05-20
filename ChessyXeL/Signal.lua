@@ -15,9 +15,9 @@ end)
 Signal.has = Method.PUBLIC(function (signal, listener)
     return TableUtil.indexOf(signal.listeners, listener) ~= -1
 end)
-Signal.dispatch = Method.PUBLIC(function (signal)
+Signal.dispatch = Method.PUBLIC(function (signal, ...)
     for i = 1, #signal.listeners do
-        signal.listeners[i]()
+        signal.listeners[i](...)
     end
 end)
 

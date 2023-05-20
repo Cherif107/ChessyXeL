@@ -46,12 +46,12 @@ Class = {
                                 --- Check if `field`'s get method is not set to 'never'
                                 if instanceClass.classVariables[field].get ~= 'never' then
                                     --- Check if `field`'s get method is not nil
-                                    if instanceClass.classVariables[field].get ~= nil and not instanceClass.classVariables[field].bypassed then
+                                    if instanceClass.classVariables[field].get ~= nil and not instanceClass.classVariables[field].bypassedGet then
                                         local OGPACCESS = instance.privateAccess
                                         instance.privateAccess = true
-                                        instanceClass.classVariables[field].bypassed = true
+                                        instanceClass.classVariables[field].bypassedGet = true
                                         local m = instanceClass.classVariables[field].get(instance, field)
-                                        instanceClass.classVariables[field].bypassed = false
+                                        instanceClass.classVariables[field].bypassedGet = false
                                         instance.privateAccess = OGPACCESS
                                         return m
                                     else
@@ -89,12 +89,12 @@ Class = {
                             --- Check if `field`'s set method is not set to 'never'
                             if instanceClass.classVariables[field].set ~= 'never' then
                                 --- Check if `field`'s set method is not nil
-                                if instanceClass.classVariables[field].set ~= nil and not instanceClass.classVariables[field].bypassed then
+                                if instanceClass.classVariables[field].set ~= nil and not instanceClass.classVariables[field].bypassedSet then
                                     local OGPACCESS = instance.privateAccess
                                     instance.privateAccess = true
-                                    instanceClass.classVariables[field].bypassed = true
+                                    instanceClass.classVariables[field].bypassedSet = true
                                     local m = instanceClass.classVariables[field].set(value, instance, field)
-                                    instanceClass.classVariables[field].bypassed = false
+                                    instanceClass.classVariables[field].bypassedSet = false
                                     instance.privateAccess = OGPACCESS
                                     return m
                                 else
@@ -147,12 +147,12 @@ Class = {
                                 --- Check if `field`'s get method is not set to 'never'
                                 if class.classVariables[field].get ~= 'never' then
                                     --- Check if `field`'s get method is not nil
-                                    if class.classVariables[field].get ~= nil and not class.classVariables[field].bypassed then
+                                    if class.classVariables[field].get ~= nil and not class.classVariables[field].bypassedGet then
                                         local OGPACCESS = class.privateAccess
                                         class.privateAccess = true
-                                        class.classVariables[field].bypassed = true
+                                        class.classVariables[field].bypassedGet = true
                                         local m = class.classVariables[field].get(class, field)
-                                        class.classVariables[field].bypassed = false
+                                        class.classVariables[field].bypassedGet = false
                                         class.privateAccess = OGPACCESS
                                         return m
                                     else
@@ -214,12 +214,12 @@ Class = {
                             --- Check if `field`'s set method is not set to 'never'
                             if class.classVariables[field].set ~= 'never' then
                                 --- Check if `field`'s set method is not nil
-                                if class.classVariables[field].set ~= nil and not class.classVariables[field].bypassed then
+                                if class.classVariables[field].set ~= nil and not class.classVariables[field].bypassedSet then
                                     local OGPACCESS = class.privateAccess
                                     class.privateAccess = true
-                                    class.classVariables[field].bypassed = true
+                                    class.classVariables[field].bypassedSet = true
                                     local m = class.classVariables[field].set(value, class, field)
-                                    class.classVariables[field].bypassed = false
+                                    class.classVariables[field].bypassedSet = false
                                     class.privateAccess = OGPACCESS
                                     return m
                                 else

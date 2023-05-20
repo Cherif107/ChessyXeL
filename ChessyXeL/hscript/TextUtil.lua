@@ -10,6 +10,7 @@ function TextUtil.load()
         HScript.execute [[
             function applyMarkup(tag:String, input:String, rules:Array<Any> = []){
                 game.modchartTexts.get(tag).applyMarkup(input, rules);
+                return null;
             }
         ]]
         TextUtil.loaded = true

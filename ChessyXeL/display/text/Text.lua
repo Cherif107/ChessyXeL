@@ -24,6 +24,24 @@ Text.override('add', function (super, txt, onTop)
     end)
     return txt
 end)
+Text.override('revive', function (super, txt)
+    Object.waitingList.add(function ()
+        addLuaText(txt.name)
+    end)
+    return txt
+end)
+Text.override('destroy', function (super, txt)
+    Object.waitingList.add(function ()
+        removeLuaText(txt.name)
+    end)
+    return txt
+end)
+Text.override('kill', function (super, txt)
+    Object.waitingList.add(function ()
+        removeLuaText(txt.name, false)
+    end)
+    return txt
+end)
 Text.applyMarkup = Method.PUBLIC(function (text, input, rules)
     Object.waitingList.add(function ()
         TextUtil.applyMarkup(text.name, input, rules)
@@ -31,6 +49,9 @@ Text.applyMarkup = Method.PUBLIC(function (text, input, rules)
     return text
 end)
 
+Text.borderColor = FieldStatus.PUBLIC(function(I, F) return Color(getProperty(I.name..'.borderColor')) end, function (V, I, F)
+    I.set('borderColor', Color.parseColor(V))
+end, Color.BLACK, false)
 Text.font = FieldStatus.PUBLIC('default', function (V, text, F)
     text.font = V
     Object.waitingList.add(function ()

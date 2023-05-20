@@ -1,5 +1,6 @@
 local Class = require 'ChessyXeL.Class'
 local FieldStatus = require 'ChessyXeL.FieldStatus'
+local Method = require 'ChessyXeL.Method'
 ---@class Basic:Class A very simple Updateable Class that keeps track of its Instances and also makes Special IDS for them
 ---@field public instances table<string, Basic> the table that keeps track of the Instances
 ---@field public update function Runs every frame
@@ -11,6 +12,9 @@ Basic.basicCount = FieldStatus.PUBLIC('default', 'default', 0, true)
 Basic.instances = FieldStatus.PUBLIC('default', 'default', {}, true)
 Basic.update = FieldStatus.PUBLIC('default', 'default', nil, false)
 Basic.ID = FieldStatus.PUBLIC('default', 'default', 0, false)
+Basic.destroy = Method.PUBLIC(function (basic)
+    table.remove(Basic.instances, basic.ID)
+end)
 Basic.new = function()
     local basic = Basic.create()
     Basic.basicCount = Basic.basicCount + 1

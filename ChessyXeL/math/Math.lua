@@ -98,10 +98,17 @@ Math.vectorLength = function (dx, dy)
     return math.sqrt(dx * dx + dy * dy)
 end
 
-Math.distanceBetween = function (SpriteA, SpriteB)
-    local dx = (SpriteA.x + SpriteA.origin.x) - (SpriteB.x + SpriteB.origin.x)
-    local dy = (SpriteA.y + SpriteA.origin.y) - (SpriteB.y + SpriteB.origin.y)
-    return math.floor(Math.vectorLength(dx, dy));
+Math.distanceBetween = function (x, y, x2, y2)
+    return math.floor(Math.vectorLength((x - x2), (y - y2)));
+end
+Math.distanceBetweenSprite = function (SpriteA, SpriteB)
+    return Math.distanceBetween(SpriteA.x + SpriteA.origin.x, SpriteA.y + SpriteA.origin.y, SpriteB.x + SpriteB.origin.x, SpriteB.y + SpriteB.origin.y);
+end
+Math.angleBetween = function (x, y, x2, y2)
+    return math.atan2(y - y2, x - x2)
+end
+Math.angleBetweenSprite = function (SpriteA, SpriteB)
+    return Math.angleBetween(SpriteA.x + SpriteA.origin.x, SpriteA.y + SpriteA.origin.y, SpriteB.x + SpriteB.origin.x, SpriteB.y + SpriteB.origin.y)
 end
 
 Math.isDistanceWithin = function (SpriteA, SpriteB, Distance, IncludeEqual)

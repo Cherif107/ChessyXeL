@@ -65,7 +65,7 @@ Color.TRANSPARENT = ColorField(0x00000000)
 Color.fromString =
     ColorMethod(
     function(Hex)
-        if not string.find(hexString, "0x") then
+        if not string.find(Hex, "0x") then
             Hex = "0xFF" .. Hex
         end
         return bit.tobit(tonumber(Hex))
@@ -382,6 +382,10 @@ Color.instanceMeta.__mul = function(t, v)
     t = Color.normalize(t)
     return Color.fromRGB(t.redFloat * v.redFloat, t.greenFloat * v.greenFloat, t.blueFloat * v.blueFloat)
 end
+Color.instanceMeta.__eq = function(t, v)
+    debugPrint('lol')
+    return Color.parseColor(t) == Color.parseColor(v)
+end
 
 Color.boundChannel =
     Method.PUBLIC(
@@ -392,13 +396,13 @@ Color.boundChannel =
 Color.maxColor =
     Method.PUBLIC(
     function(color)
-        return math.max(color.red, color.blue, color.green)
+        return math.max(color.redFloat, color.blueFloat, color.greenFloat)
     end
 )
 Color.minColor =
     Method.PUBLIC(
     function(color)
-        return math.min(color.red, color.blue, color.green)
+        return math.min(color.redFloat, color.blueFloat, color.greenFloat)
     end
 )
 
@@ -428,18 +432,12 @@ Color.lightness =
 Color.hue =
     FieldStatus.PUBLIC(
     function(I)
-        local delta = I.maxColor() - I.minColor()
-        local hue
-        if delta == 0 then
-            hue = 0
-        elseif I.maxColor() == I.red then
-            hue = bit.band(60 * ((I.green - I.blue) / delta), 360)
-        elseif I.maxColor() == I.green then
-            hue = bit.band(60 * ((I.blue - I.red) / delta) + 120, 360)
-        else
-            hue = bit.band(60 * ((I.red - I.green) / delta) + 240, 360)
+        local hueRad = math.atan2(math.sqrt(3) * (I.greenFloat - I.blueFloat), 2 * I.redFloat - I.greenFloat - I.blueFloat)
+        local hue = 0
+        if hueRad ~= 0 then
+            hue = 180 / math.pi * hueRad
         end
-        return hue
+        return hue < 0 and hue + 360 or hue
     end,
     function(V, I)
         I.setHSB(V, I.saturation, I.brightness, I.alphaFloat)
@@ -466,7 +464,7 @@ Color.setRGBFloat =
 )
 Color.setHSChromaMatch =
     Method.PUBLIC(
-    function(color, Hue, Saturation, Chroma, Match, Alpha)
+    function(color, Hue, Chroma, Match, Alpha)
         Hue = Hue % 360
         local hueD = Hue / 60
         local mid = Chroma * (1 - math.abs(hueD % 2 - 1)) + Match
@@ -507,7 +505,7 @@ Color.setHSB =
     function(color, Hue, Saturation, Brightness, Alpha)
         local chroma = Brightness * Saturation
         local match = Brightness - chroma
-        return color.setHSChromaMatch(Hue, Saturation, chroma, match, Alpha)
+        return color.setHSChromaMatch(Hue, chroma, match, Alpha)
     end
 )
 Color.setHSL =
@@ -515,7 +513,7 @@ Color.setHSL =
     function(color, Hue, Saturation, Lightness, Alpha)
         local chroma = (1 - math.abs(2 * Lightness - 1)) * Saturation
         local match = Lightness - chroma / 2
-        return color.setHSChromaMatch(Hue, Saturation, chroma, match, Alpha)
+        return color.setHSChromaMatch(Hue, chroma, match, Alpha)
     end
 )
 Color.setCMYK =

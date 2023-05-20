@@ -36,9 +36,10 @@ local HScript = {
         return importedLibrary, true
     end,
     signals = Signal(),
+    doRun = false
 }
 HScript.run = function (fun)
-    if callOnHscript then
+    if HScript.doRun then
         return fun()
     else
         return HScript.signals.add(fun)
@@ -49,6 +50,7 @@ local o = onCreatePost
 function onCreatePost()
     if o then o() end
     HScript.signals.dispatch()
+    HScript.doRun = true
 end
 
 HScript.variables = setmetatable({}, {
@@ -160,7 +162,7 @@ HScript.initialize = function ()
                             }
                             return textFormat;
                         case '__chessyxel__hscript__textformatmarkerpair__conversion__':
-                            return new FlxTextFormatMarkerPair(value[1], value[2]);
+                            return new FlxTextFormatMarkerPair(parseLua(value[1]), value[2]);
                         case '__chessyxel__hscript__point__conversion__':
                             return new FlxPoint(value[1], value[2]);
                         case '__chessyxel__hscript__matrix__conversion__':
@@ -182,13 +184,14 @@ HScript.initialize = function ()
                     }
                     return OM;
                 }
-                if (Std.isOfType(value, FlxSprite) || Std.isOfType(value, ModchartSprite)){
+                var type = Type.getClass(value);
+                if (type == FlxSprite || type == ModchartSprite){
                     __chessyxel__hscript__object__numerator += 1;
                     var tag = 'CHESSYXEL_HSCRIPT_OBJECT_'+__chessyxel__hscript__object__numerator; 
                     game.variables.set(tag, value);
                     return toLua(["__chessyxel__hscript__sprite__conversion__toLua", tag]);
                 }
-                if (Std.isOfType(value, FlxText) || Std.isOfType(value, ModchartText)){
+                if (type == FlxText || type == ModchartText){
                     __chessyxel__hscript__object__numerator += 1;
                     var tag = 'CHESSYXEL_HSCRIPT_OBJECT_'+__chessyxel__hscript__object__numerator; 
                     game.variables.set(tag, value);
@@ -203,6 +206,7 @@ HScript.initialize = function ()
                     game.variables.set(tag, value);
                     return toLua(["__chessyxel__hscript__object__conversion__toLua", tag]);
                 }
+                return null;
             }
         
             function getOnHscript(name:String){
