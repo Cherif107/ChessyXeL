@@ -41,6 +41,9 @@ local Game = {
 }
 setmetatable(Game, {
     __index = function (t, f)
+        if getProperty and getProperty(f) ~= f then
+            return getProperty(f)
+        end
         local o = Object()
         o.name = f
         rawset(Game, f, o)
