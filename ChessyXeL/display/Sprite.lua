@@ -134,6 +134,7 @@ Sprite.updateHitbox = Method.PUBLIC(function (sprite)
 end)
 
 Sprite.getScreenPosition = Method.PUBLIC(function (sprite, result, camera)
+    Game = Game or require 'ChessyXeL.Game'
     camera = camera or Game.FlxG.camera
     result = result or Point.get()
 
@@ -145,6 +146,7 @@ Sprite.getScreenPosition = Method.PUBLIC(function (sprite, result, camera)
     return result.subtract((camera.scroll.x or 0) * sprite.scrollFactor.x, (camera.scroll.y or 0) * sprite.scrollFactor.y);
 end)
 Sprite.overlapsPoint = Method.PUBLIC(function(sprite, point, inscreenSpace, camera)
+    Game = Game or require 'ChessyXeL.Game'
     if not inscreenSpace then
         return (point.x >= sprite.x) and (point.x < sprite.x + sprite.width) and (point.y >= sprite.y) and (point.y < sprite.y + sprite.height)
     end
@@ -222,7 +224,6 @@ Sprite.makeFromTag = Method.PUBLIC(function(Self, tag, x, y)
     return sprite
 end, true)
 Sprite.new = function (x, y, a)
-    Game = Game or require 'ChessyXeL.Game'
     local sprite = Sprite.create()
     if a ~= 'DO NOT INITIALIZE' then
         Sprite.INITIALIZE_FUNCTION(sprite.name, '', x, y)
