@@ -2,7 +2,7 @@ local ClassObject = require 'ChessyXeL.display.object.ClassObject'
 local Object = require 'ChessyXeL.display.object.Object'
 local Mouse = require 'ChessyXeL.input.Mouse'
 local Sprite = require 'ChessyXeL.display.Sprite'
-local Text = require 'ChessyXeL.display.Text'
+local Text = require 'ChessyXeL.display.text.Text'
 
 local function Obj(name)
     local obj = Object()
