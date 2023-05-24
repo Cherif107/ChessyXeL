@@ -35,17 +35,29 @@ local Game = {
     iconP1 = Sprite.fromTag('iconP1'),
     iconP2 = Sprite.fromTag('iconP2'),
 
-    playerStrums = Obj('playerStrums'),
-    opponentStrums = Obj('opponentStrums'),
-    strumLineNotes = Obj('strumLineNotes')
+    playerStrums = Obj('playerStrums.members'),
+    opponentStrums = Obj('opponentStrums.members'),
+    strumLineNotes = Obj('strumLineNotes.members'),
+    members = Obj('members')
 }
 setmetatable(Game, {
     __index = function (t, f)
+        -- debugPrint('hi '..f)
         if getProperty and getProperty(f) ~= f then
+            -- debugPrint('hi #3 '..f)
             return getProperty(f)
         end
         local o = Object()
         o.name = f
+
+        if type(o.numFrames) == 'number' then
+            if type(o.borderColor) == 'number' then
+                o = Text.fromTag(f)
+            else
+                o = Sprite.fromTag(f)
+            end
+        end
+        
         rawset(Game, f, o)
         return o
     end

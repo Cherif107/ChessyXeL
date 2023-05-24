@@ -13,10 +13,10 @@ local Stage = require 'ChessyXeL.Stage'
 ---@class display.addons.SkewedSprite : display.Sprite 
 local SkewedSprite = Sprite.extend 'SkewedSprite'
 
-SkewedSprite.skew = FieldStatus.PUBLIC('default', 'default', Point.get())
-SkewedSprite.transformMatrix = FieldStatus.PUBLIC('default', 'default', Matrix())
+SkewedSprite.skew = FieldStatus.PUBLIC('default', 'default', nil)
+SkewedSprite.transformMatrix = FieldStatus.PUBLIC('default', 'default', nil)
 SkewedSprite.exposedMatrix = FieldStatus.PUBLIC('default', 'default', false)
-SkewedSprite._skewMatrix = FieldStatus.PUBLIC('default', 'default', Matrix())
+SkewedSprite._skewMatrix = FieldStatus.PUBLIC('default', 'default', nil)
 SkewedSprite.useVertices = FieldStatus.PUBLIC('default', 'default', false)
 SkewedSprite.vertices = FieldStatus.PUBLIC('default', 'default', {Point.get(), Point.get(), Point.get(), Point.get()})
 
@@ -133,6 +133,9 @@ end
 SkewedSprite.new = function ()
     local sprite = SkewedSprite.create()
     SkewedSprite.skewedSprites[#SkewedSprite.skewedSprites + 1] = sprite
+    sprite.transformMatrix = Matrix()
+    sprite.skew = Point.get()
+    sprite._skewMatrix = Matrix()
     return sprite
 end
 

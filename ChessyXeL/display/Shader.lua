@@ -16,27 +16,59 @@ Shader.data = FieldStatus.PUBLIC(function (I, F)
         I.data = {}
         setmetatable(I.data, {
             __index = function (t, index)
-                local bool, int, float, floatarray, intarray, boolarray = 
-                    getShaderBool(I.shaderObject, index), getShaderInt(I.shaderObject, index), getShaderFloat(I.shaderObject, index), 
-                    getShaderFloatArray(I.shaderObject, index), getShaderIntArray(I.shaderObject, index), getShaderBoolArray(I.shaderObject, index)
+                local values = {
+                    getShaderBool(I.shaderObject, index),
+                    getShaderInt(I.shaderObject, index),
+                    getShaderFloat(I.shaderObject, index),
+                    getShaderBoolArray(I.shaderObject, index),
+                    getShaderIntArray(I.shaderObject, index),
+                    getShaderFloatArray(I.shaderObject, index)
+                }
 
-                return bool or int or float or floatarray or intarray or boolarray
+                for i = 1, 3 do
+                    if type(values[i]) ~= 'string' then
+                        local array = values[i + 3]
+                        if #array > 1 then
+                            return array
+                        end
+                        return values[i]
+                    end
+                end
             end,
             __newindex = function (t, index, value)
                 Object.waitingList.add(function ()
-                    local type = type(value)
-                    if type == 'boolean' then
+                    local typeOf = type(value)
+                    if typeOf == 'boolean' then
                         return setShaderBool(I.shaderObject, index, value)
-                    elseif type == 'number' then
-                        return (mathType(value) == 'integer' and setShaderInt or setShaderFloat)(I.shaderObject, index, value)
-                    elseif type == 'string'  then
+                    elseif typeOf == 'number' then
+                        if mathType(value) == 'integer' then
+                            setShaderInt(I.shaderObject, index, value)
+                            if getShaderInt(I.shaderObject, index) ~= value then
+                                setShaderFloat(I.shaderObject, index, value)
+                            end
+                            return
+                        end
+                        return setShaderFloat(I.shaderObject, index, value)
+                    elseif typeOf == 'string'  then
                         return setShaderSampler2D(I.shaderObject, index, value)
-                    elseif type == 'table' then
-                        type = type(value[1])
-                        if type == 'boolean' then
+                    elseif typeOf == 'table' then
+                        typeOf = type(value[1])
+                        if typeOf == 'boolean' then
                             return setShaderBoolArray(I.shaderObject, index, value)
-                        elseif type == 'number' then
-                            return (mathType(value) == 'integer' and setShaderIntArray or setShaderFloatArray)(I.shaderObject, index, value)
+                        elseif typeOf == 'number' then
+                            local leType = 'number'
+                            for i = 1, #value do
+                                if leType == 'float' then break end
+                                leType = mathType(value[i])
+                            end
+                            if leType == 'integer' then
+                                setShaderIntArray(I.shaderObject, index, value)
+                                if getShaderIntArray(I.shaderObject, index) ~= value then
+                                    setShaderFloatArray(I.shaderObject, index, value)
+                                end
+                                return
+                            end
+                            return setShaderFloatArray(I.shaderObject, index, value)
                         end
                     end    
                 end)

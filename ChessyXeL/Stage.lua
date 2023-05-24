@@ -51,13 +51,24 @@ Stage = {
         onTweenCompleted = {},
         onSoundFinished = {},
         onTimerCompleted = {},
+        
+        onError = {}
     },
     set = function(Function, NewCallBack, Tag)
         if Stage.functions[Function] == nil then
             error('Stage Error: Callback ('..Function..') Does Not Exist')
         else
             Tag = Tag or #Stage.functions[Function] + 1
-            Stage.functions[Function][Tag] = NewCallBack 
+            Stage.functions[Function][Tag] = function(...)
+                local args = {...}
+                local stat, res = pcall(function ()
+                    NewCallBack(unpack(args))
+                end)
+                if not stat and Function ~= 'onError' then
+                    Stage.call('onError', res, Function)
+                    if luaDebugMode then error(res, 5) end
+                end
+            end
         end
     end,
     remove = function(Function, Tag)
@@ -75,7 +86,7 @@ Stage = {
                 func(...)
             end
         end
-    end
+    end,
 }
 
 local f = onCreate

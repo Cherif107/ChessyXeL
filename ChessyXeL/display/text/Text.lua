@@ -4,6 +4,7 @@ local Sprite = require 'ChessyXeL.display.Sprite'
 local Object = require 'ChessyXeL.display.object.Object'
 local Color = require 'ChessyXeL.util.Color'
 local TextUtil = require 'ChessyXeL.hscript.TextUtil'
+local Log = require 'ChessyXeL.debug.Log'
 
 ---@class display.text.Text : display.Sprite a Class that makes Texts
 local Text = Sprite.extend 'Text'
@@ -19,24 +20,37 @@ Text.fromTag = Method.PUBLIC(function(Self, tag)
     return txt
 end,  true)
 Text.override('add', function (super, txt, onTop)
+    if Log.logger.enabled and Log.logObjects then
+        Log.logger.log('Text of ID '..txt.name..' was Added')
+    end
     Object.waitingList.add(function ()
         addLuaText(txt.name, onTop)
     end)
     return txt
 end)
 Text.override('revive', function (super, txt)
+    if Log.logger.enabled and Log.logObjects then
+        Log.logger.log('Text of ID '..txt.name..' was Revived')
+    end
     Object.waitingList.add(function ()
         addLuaText(txt.name)
     end)
     return txt
 end)
 Text.override('destroy', function (super, txt)
+    super()
+    if Log.logger.enabled and Log.logObjects then
+        Log.logger.log('Text of ID '..txt.name..' was Destroyed')
+    end
     Object.waitingList.add(function ()
         removeLuaText(txt.name)
     end)
     return txt
 end)
 Text.override('kill', function (super, txt)
+    if Log.logger.enabled and Log.logObjects then
+        Log.logger.log('Text of ID '..txt.name..' was Killed')
+    end
     Object.waitingList.add(function ()
         removeLuaText(txt.name, false)
     end)

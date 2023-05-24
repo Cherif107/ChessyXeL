@@ -201,9 +201,9 @@ Group.revive = Method.PUBLIC(function (group)
     end)
 end)
 Group.forEach = Method.PUBLIC(function (group, foreach)
-    for i = 1, #group.members do
-        if group.members[i] ~= nil then
-            foreach(group.members[i])
+    for _, member in pairs(group.members) do
+        if member ~= nil then
+            foreach(member)
         end
     end
 end)

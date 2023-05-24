@@ -48,9 +48,10 @@ end
 
 local o = onCreatePost
 function onCreatePost()
-    if o then o() end
-    HScript.signals.dispatch()
+    HScript.initialize(true)
     HScript.doRun = true
+    HScript.signals.dispatch()
+    if o then o() end
 end
 
 HScript.variables = setmetatable({}, {
@@ -62,8 +63,8 @@ HScript.variables = setmetatable({}, {
     end,
 })
 
-HScript.initialize = function ()
-    if HScript.shouldInitialize then
+HScript.initialize = function (force)
+    if HScript.shouldInitialize or force then
         for _, library in pairs({"String", "Int", "Float", "Bool", "Array", 'Std', 'Reflect', 'Type', 'haxe.ds.StringMap', 'haxe.ds.ObjectMap', 'haxe.ds.IntMap', 'flixel.text.FlxText', 'ModchartText', 'ModchartSprite', 'llua.Lua_helper', 'FunkinLua'}) do
             HScript.addLibrary(library)
         end
@@ -266,6 +267,10 @@ HScript.initialize = function ()
                     return toLua(Reflect.callMethod(null, getOnHscript(name), parseLua(arguments)));
                 }
             });
+            addCallback('callOnHscriptUnsafe', function(name:String, ?arguments = []){
+                Reflect.callMethod(null, getOnHscript(name), arguments);
+                return null;
+            });
         ]==]
         HScript.shouldInitialize = false
         HScript.executeUnsafe(codeToRun)
@@ -338,6 +343,11 @@ HScript.call = function (Function, ...)
         args[i] = HScript.fromLua(args[i])
     end
     return HScript.run(function() HScript.toLua(callOnHscript(Function, args)) end)
+end
+HScript.callUnsafe = function (Function, ...)
+    HScript.initialize()
+    local args = {...}
+    return HScript.run(function() callOnHscriptUnsafe(Function, args) end)
 end
 HScript.set = function (variable, value)
     HScript.initialize()

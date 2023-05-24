@@ -579,7 +579,7 @@ Color.getDarkened =
         return o
     end
 )
-Color.to24bit =
+Color.to24Bit =
     Method.PUBLIC(
     function(color)
         return bit.band(color.value, 0xffffff)

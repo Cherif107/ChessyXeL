@@ -20,6 +20,7 @@ Class = {
         local metatable = {}
         --- [ INDEX ] ---
         metatable.__index = function (instance, field)
+            local logMeta = rawget(instance.__instanceClass, 'logSignals') or {}
             --- Check if `field` is actually in `instance` instead of `instance.regularFields`
             if rawget(instance, field) ~= nil then -- added `~= nil` because of booleans
                 return rawget(instance, field) -- returns the Field directly
@@ -51,11 +52,13 @@ Class = {
                                         instance.privateAccess = true
                                         instanceClass.classVariables[field].bypassedGet = true
                                         local m = instanceClass.classVariables[field].get(instance, field)
+                                        if logMeta.get then logMeta.get(instance, field) end
                                         instanceClass.classVariables[field].bypassedGet = false
                                         instance.privateAccess = OGPACCESS
                                         return m
                                     else
                                         --- Return the value in the Instance if the get method is nil 
+                                        if logMeta.get then logMeta.get(instance, field) end
                                         return instance.regularFields[field]
                                     end
                                 else
@@ -72,6 +75,7 @@ Class = {
         end
         --- [ NEW INDEX ] ---
         metatable.__newindex = function (instance, field, value)
+            local logMeta = rawget(instance.__instanceClass, 'logSignals') or {}
             --- Check if `field` is actually in `instance` instead of `instance.regularFields`
             if rawget(instance, field) ~= nil then
                 return rawset(instance, field, value) -- sets the Field directly
@@ -94,12 +98,14 @@ Class = {
                                     instance.privateAccess = true
                                     instanceClass.classVariables[field].bypassedSet = true
                                     local m = instanceClass.classVariables[field].set(value, instance, field)
+                                    if logMeta.set then logMeta.set(instance, field, value) end
                                     instanceClass.classVariables[field].bypassedSet = false
                                     instance.privateAccess = OGPACCESS
                                     return m
                                 else
                                     --- sets the value in the Instance if the get method is nil 
                                     instance.regularFields[field] = value
+                                    if logMeta.set then logMeta.set(instance, field, value) end
                                     return
                                 end
                             else
@@ -254,6 +260,7 @@ Class = {
                     __isClassInstance = true,
                     regularFields = {},
                     privateAccess = false,
+                    __instanceClass = class
                 }
                 for field, F in pairs(class.classVariables) do
                     instance.regularFields[field] = F.value
@@ -266,9 +273,11 @@ Class = {
             extend = function (className)
                 local newClass = Class(className)
                 rawset(newClass, 'additionalInstanceMetatable', rawget(class, 'additionalInstanceMetatable'))
+                rawset(newClass, 'logSignals', rawget(class, 'logSignals'))
                 newClass.create = function (...)
                     local p = setmetatable(class.new(...), newClass.instanceMeta)
                     p.__type = newClass.className
+                    p.__instanceClass = newClass
                     for field, F in pairs(newClass.classVariables) do
                         if p.regularFields[field] == nil then
                             p.regularFields[field] = F.value
