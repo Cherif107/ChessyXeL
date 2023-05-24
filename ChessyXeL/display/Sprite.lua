@@ -426,9 +426,9 @@ Sprite.drawCurve =
 )
 
 Sprite.call = Method.PUBLIC(function (spr, functionName, ...)
-    local a = ...
+    local a = {...}
     Object.waitingList.add(function ()
-        SpriteUtil.callFromSprite(spr.name, functionName, a)
+        SpriteUtil.callFromSprite(spr.name, functionName, unpack(a))
     end)
 end)
 
