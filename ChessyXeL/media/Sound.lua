@@ -38,24 +38,28 @@ Sound.play = Method.PUBLIC(function(I, volume)
     Object.waitingList.add(function ()
         playSound(I.soundPath, volume or I.volume, I.name)
     end)
+    I.stopped = false
     return I
 end)
 Sound.stop = Method.PUBLIC(function(I)
     Object.waitingList.add(function ()
         stopSound(I.name)
     end)
+    I.stopped = true
     return I
 end)
 Sound.pause = Method.PUBLIC(function(I)
     Object.waitingList.add(function ()
         pauseSound(I.name)
     end)
+    I.paused = true
     return I
 end)
 Sound.resume = Method.PUBLIC(function(I)
     Object.waitingList.add(function ()
         resumeSound(I.name)
     end)
+    I.paused = false
     return I
 end)
 Sound.fadeIn = Method.PUBLIC(function(I, duration, from, to)
@@ -70,6 +74,9 @@ Sound.fadeOut = Method.PUBLIC(function(I, duration, from, to)
     end)
     return I
 end)
+
+Sound.paused = FieldStatus.PUBLIC('default', 'default', false)
+Sound.stopped = FieldStatus.PUBLIC('default', 'default', true)
 -- [[ /Hscript ]] --
 Sound.pitch = FieldStatus.PUBLIC('default', function (V, I)
     Object.waitingList.add(function ()

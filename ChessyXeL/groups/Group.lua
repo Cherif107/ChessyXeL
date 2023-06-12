@@ -28,13 +28,14 @@ Group._memberAdded = FieldStatus.NORMAL('default', 'default', Signal())
 Group._memberRemoved = FieldStatus.NORMAL('default', 'default', Signal())
 Group._marker = FieldStatus.NORMAL('default', 'default', 0)
 
-Group.destroy = Method.PUBLIC(function (group)
+Group.override('destroy', function (super, group)
+    super()
     group.forEach(function (member)
         if member ~= nil and member.destroy then
             member.destroy()
         end
     end)
-    group.members = nil
+    group.members = {}
 end)
 Group.getFirstNil = Method.PUBLIC(function (group)
     for i = 1, #group.members do

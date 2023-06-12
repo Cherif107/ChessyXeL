@@ -1,5 +1,6 @@
 require "ChessyXeL.util.StringUtil"
 local Signal = require 'ChessyXeL.Signal'
+local Stage = require 'ChessyXeL.Stage'
 local Sprite, Text, Object
 
 ---@class hscript.HScript
@@ -337,28 +338,24 @@ HScript.toLua = function (value)
     return value
 end
 HScript.call = function (Function, ...)
-    HScript.initialize()
     local args = {...}
     for i = 1, #args do
         args[i] = HScript.fromLua(args[i])
     end
-    return HScript.run(function() HScript.toLua(callOnHscript(Function, args)) end)
+    return HScript.run(function() HScript.initialize() HScript.toLua(callOnHscript(Function, args)) end)
 end
 HScript.callUnsafe = function (Function, ...)
-    HScript.initialize()
     local args = {...}
-    return HScript.run(function() callOnHscriptUnsafe(Function, args) end)
+    return HScript.run(function() HScript.initialize() callOnHscriptUnsafe(Function, args) end)
 end
 HScript.set = function (variable, value)
-    HScript.initialize()
     if type(value) == "function" then
         return HScript.setFunction(variable, value)
     end
-    return HScript.run(function() setOnHscript(variable, HScript.fromLua(value)) end)
+    return HScript.run(function() HScript.initialize() setOnHscript(variable, HScript.fromLua(value)) end)
 end
 HScript.get = function (variable)
-    HScript.initialize()
-    return HScript.run(function() HScript.toLua(getOnHscript(variable)) end)
+    return HScript.run(function() HScript.initialize() HScript.toLua(getOnHscript(variable)) end)
 end
 HScript.pushVariable = function (name, value)
     HScript.call('pushVariable', name, HScript.fromLua(value))
@@ -389,7 +386,10 @@ HScript.execute = function (code)
     end
 
     HScript.initialize()
-    return HScript.executeUnsafe(code)
+    return HScript.toLua(HScript.executeUnsafe(code))
+end
+HScript.runCode = function (code)
+    return HScript.run(function() return HScript.execute(code) end)
 end
 
 function __chessyxel__callbacks__hscript__callontable__(Function, ...)

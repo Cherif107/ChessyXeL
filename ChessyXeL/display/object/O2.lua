@@ -9,14 +9,7 @@ local Object = Basic.extend 'Object'
 rawset(Object, 'additionalInstanceMetatable', {
     __index = function (instance, field)
         local f = (instance.__isClassObject and ObjectField.parseIndex(instance.__additionalClassField or '', field) or ObjectField.parseIndex(instance.name, field))
-        local v = f
-        if getProperty ~= nil then
-            if instance.__isClassObject then
-                v = getPropertyFromClass(instance.name, f)
-            else
-                v = getProperty(f)
-            end
-        end
+        local v = (instance.__isClassObject and getPropertyFromClass(instance.name, f) or getProperty(f))
 
         if v == f then
             local t = instance.regularFields[field]
@@ -34,13 +27,11 @@ rawset(Object, 'additionalInstanceMetatable', {
     end,
     __newindex = function (instance, field, value)
         local f = (instance.__isClassObject and ObjectField.parseIndex(instance.__additionalClassField or '', field) or ObjectField.parseIndex(instance.name, field))
-        local v = f
-        if getProperty ~= nil then
-            if instance.__isClassObject then
-                v = getPropertyFromClass(instance.name, f)
-            else
-                v = getProperty(f)
-            end
+        local v
+        if getProperty == nil then
+            v = f
+        else
+            v = (instance.__isClassObject and getPropertyFromClass(instance.name, f) or getProperty(f))
         end
         if v == f and type(instance.regularFields[field]) == 'table' and type(instance.regularFields[field].set) == 'function' then
             return Object.waitingList.add(function()

@@ -21,7 +21,14 @@ function Field.new(name, get, set, isClassField, p)
     return setmetatable(field, {
         __newindex = function(this, key, value)
             local f = (isClassField and key or Field.parseIndex(this.name, key))
-            local prop = (isClassField and getPropertyFromClass(p, Field.parseIndex(this.name, key)) or getProperty(f))
+            local prop = f
+            if getProperty ~= nil then
+                if isClassField then
+                    prop = getPropertyFromClass(p, Field.parseIndex(this.name, key))
+                else
+                    prop = getProperty(f)
+                end
+            end
             if prop == f and this.initializedFields[key] and this.initializedFields[key].set then
                 this.initializedFields[key].set(f, value, key)
             else
@@ -31,7 +38,14 @@ function Field.new(name, get, set, isClassField, p)
         __index = function(this, key)
             if key == 'get' then return rawget(this, 'get') end
             local f = (isClassField and key or Field.parseIndex(this.name, key))
-            local prop = (isClassField and getPropertyFromClass(p, Field.parseIndex(this.name, key)) or getProperty(f))
+            local prop = f
+            if getProperty ~= nil then
+                if isClassField then
+                    prop = getPropertyFromClass(p, Field.parseIndex(this.name, key))
+                else
+                    prop = getProperty(f)
+                end
+            end
 
             if prop == f or prop == Field.parseIndex(this.name, key) then
                 local initedF = rawget(this, 'initializedFields')[key] or Field.new(Field.parseIndex(this.name, key), nil, nil, isClassField, p)

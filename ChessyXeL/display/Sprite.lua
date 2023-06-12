@@ -85,7 +85,9 @@ Sprite.camera =
         I.camera = V
         return Object.waitingList.add(
             function()
-                setObjectCamera(I.name, V)
+                if I.alive then
+                    setObjectCamera(I.name, V)
+                end
             end
         )
     end,
@@ -104,7 +106,9 @@ Sprite.order =
         I.order = V
         return Object.waitingList.add(
             function()
-                setObjectOrder(I.name, V)
+                if I.alive then
+                    setObjectOrder(I.name, V)
+                end
             end
         )
     end,
@@ -130,6 +134,7 @@ Sprite.shader =
     "default",
     function(shader, I, F)
         I.shader = shader.copyToObject(I)
+        if I.shader == nil then debugPrint('hi') end
         Object.waitingList.add(
             function()
                 setSpriteShader(I.name, I.shader.shaderPath)
@@ -186,7 +191,7 @@ Sprite.override(
         if Log.logger.enabled and Log.logObjects then
             Log.logger.log('Sprite of ID '..sprite.name..' was Destroyed')
         end
-        if sprite.__type == "Sprite" then
+        if sprite.__type ~= "Text" then
             Object.waitingList.add(
                 function()
                     removeLuaSprite(sprite.name)
@@ -314,6 +319,10 @@ Sprite.overlapsPoint =
     end
 )
 
+Sprite.overlaps = Method.PUBLIC(function (sprite, object)
+    return objectsOverlap(sprite.name, object.name)
+end)
+
 Sprite.addAnimation =
     Method.PUBLIC(
     function(sprite, name, frames, frameRate, loop)
@@ -366,6 +375,13 @@ Sprite.alphaMask =
         return sprite
     end
 )
+Sprite.alphaMaskPosition =
+    Method.PUBLIC(
+    function(sprite, sprite2, x, y, output)
+        SpriteUtil.alphaMaskPosition(sprite.name, sprite2.name, x, y, output.name)
+        return sprite
+    end
+)
 Sprite.drawGradient =
     Method.PUBLIC(
     function(sprite, width, height, colors, chunkSize, rotation, interpolate)
@@ -386,6 +402,17 @@ Sprite.drawPolygon =
         Object.waitingList.add(
             function()
                 SpriteUtil.drawPolygon(sprite.name, vertices, fillColor, lineStyle, drawStyle)
+            end
+        )
+        return sprite
+    end
+)
+Sprite.drawCircle =
+    Method.PUBLIC(
+    function(sprite, X, Y, Radius, fillColor, lineStyle, drawStyle)
+        Object.waitingList.add(
+            function()
+                SpriteUtil.drawCircle(sprite.name, X, Y, Radius, fillColor, lineStyle, drawStyle)
             end
         )
         return sprite

@@ -8,8 +8,8 @@ local mathType = function (value)
     return (math.floor(value) == value and 'integer' or 'float')
 end
 
----@class display.Shader : Basic
-local Shader = Basic.extend 'Shader'
+---@class display.Shader : display.object.Object
+local Shader = Object.extend 'Shader'
 
 Shader.data = FieldStatus.PUBLIC(function (I, F)
     if I.data == nil then
@@ -82,8 +82,9 @@ Shader.shaderPath = FieldStatus.PUBLIC('default', 'default', 'SHADER')
 Shader.shaderVersion = FieldStatus.PUBLIC('default', 'default', nil)
 Shader.shaderObject = FieldStatus.PUBLIC('default', 'default', nil)
 Shader.copyToObject = Method.PUBLIC(function (shader, object)
-    local newShader = Shader.new(shader.shaderPath, shader.shaderVersion)
-    newShader.shaderObject = object.name 
+    local newShader = Shader.new(shader.shaderPath, shader.shaderVersion, 'DO NOT INITIALIZE')
+    newShader.shaderObject = object.name
+    newShader.name = object.name..'.shader'
     return newShader 
 end)
 Shader.fromString = Method.PUBLIC(function (Self, stringCode, glslVersion)
@@ -95,13 +96,17 @@ Shader.fromString = Method.PUBLIC(function (Self, stringCode, glslVersion)
     end)
     return shader
 end, true)
-Shader.new = function (filePath, glslVersion)
+Shader.new = function (filePath, glslVersion, doInit)
     local shader = Shader.create()
-    shader.shaderPath = filePath
-    shader.shaderVersion = glslVersion
-    Object.waitingList.add(function ()
-        initLuaShader(filePath, glslVersion)
-    end)
+    if filePath ~= nil then
+        shader.shaderPath = filePath
+        shader.shaderVersion = glslVersion
+        Object.waitingList.add(function ()
+            if doInit ~= 'DO NOT INITIALIZE' then
+                initLuaShader(filePath, glslVersion)
+            end
+        end)
+    end
     return shader
 end
 

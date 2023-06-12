@@ -289,13 +289,14 @@ Class = {
                 for field, F in pairs(class.classVariables) do
                     newClass[field] = F.status
                     newClass.classVariables[field].isMethod = F.isMethod
+                    newClass.classVariables[field].value = class.classVariables[field].value
                 end
 
                 newClass.override = function (FunctionName, Function) -- unlocked when yes ok yes ok eys ok eys 
                     if newClass.classVariables[FunctionName] and newClass.classVariables[FunctionName].isMethod then
                         local super = newClass.classVariables[FunctionName].value
                         newClass.classVariables[FunctionName].value = function (...)
-                            Function(super, ...)
+                            return Function(super, ...)
                         end
                     end
                 end
