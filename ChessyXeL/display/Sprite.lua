@@ -7,6 +7,7 @@ local HScript = require "ChessyXeL.hscript.HScript"
 local SpriteUtil = require "ChessyXeL.hscript.SpriteUtil"
 local Point = require "ChessyXeL.math.Point"
 local ColorTransform = require "ChessyXeL.geom.ColorTransform"
+local Animation = require "ChessyXeL.display.animation.Animation"
 local Log = require 'ChessyXeL.debug.Log'
 local Game
 
@@ -31,18 +32,9 @@ Sprite.animated =
 )
 Sprite.animation =
     FieldStatus.PUBLIC(
-    function(I, F)
-        if I.animation == "?" then
-            I.animation = ObjectField(ObjectField.parseIndex(I.name, F))
-            I.animation.rawAdd("add", I.addAnimation)
-            I.animation.rawAdd("addByPrefix", I.addAnimationByPrefix)
-            I.animation.rawAdd("addByIndices", I.addAnimationByIndices)
-            I.animation.rawAdd("play", I.playAnim)
-        end
-        return I.animation
-    end,
     "default",
-    "?"
+    "default",
+    nil
 )
 Sprite.color =
     FieldStatus.PUBLIC(
@@ -487,6 +479,7 @@ Sprite.new = function(x, y, a)
     end
     sprite.colorTransform = ColorTransform()
     sprite.colorTransform.parent = sprite
+    sprite.animation = Animation(sprite)
     return sprite
 end
 

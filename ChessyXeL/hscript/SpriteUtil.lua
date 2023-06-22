@@ -8,7 +8,7 @@ local SpriteUtil = {
 
 function SpriteUtil.load()
     if not SpriteUtil.loaded then
-        HScript.execute [[
+        HScript.runCode [[
             import flixel.util.FlxGradient;
             import flixel.util.FlxSpriteUtil;
             import openfl.geom.Matrix;
@@ -143,6 +143,12 @@ function SpriteUtil.load()
             function callFromSprite(tag:String, func:String, arguments:Array<Dynamic>){
                 return parseLua(Reflect.callMethod(game.getLuaObject(tag), func, arguments));
             }
+            function setAnimationCallback(tag:String, func){
+                getObject(tag).animation.callback = function(name:String, frameNumber:Int, frameIndex:Int){
+                    func(name, frameNumber, frameIndex, getObject(tag).animation.finished);
+                };
+                return null;
+            }
         ]]
         SpriteUtil.loaded = true
     end
@@ -179,6 +185,12 @@ end
 function SpriteUtil.callFromSprite(spriteTag, func, ...)
     SpriteUtil.load()
     HScript.call('callFromSprite', spriteTag, func, {...})
+end
+function SpriteUtil.setAnimationCallback(spriteTag, callback)
+    SpriteUtil.load()
+    HScript.call('setAnimationCallback', spriteTag, function(name, frameNumber, frameIndex, finished)
+        callback(name, frameNumber, frameIndex, finished)
+    end)
 end
 
 return SpriteUtil

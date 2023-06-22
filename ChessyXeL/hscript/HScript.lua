@@ -272,6 +272,19 @@ HScript.initialize = function (force)
                 Reflect.callMethod(null, getOnHscript(name), arguments);
                 return null;
             });
+
+            function getObject(obj:String){
+                var spr:FlxSprite = game.getLuaObject(obj);
+
+                if(spr == null){
+                    var killMe:Array<String> = obj.split('.');
+                    spr = FunkinLua.getObjectDirectly(killMe[0]);
+                    if(killMe.length > 1) {
+                        spr = FunkinLua.getVarInArray(FunkinLua.getPropertyLoopThingWhatever(killMe), killMe[killMe.length-1]);
+                    }
+                }
+                return spr;
+            }
         ]==]
         HScript.shouldInitialize = false
         HScript.executeUnsafe(codeToRun)
@@ -394,7 +407,7 @@ end
 
 function __chessyxel__callbacks__hscript__callontable__(Function, ...)
     if HScript.functions[Function] then
-        return HScript.fromLua(HScript.functions[Function]() or nil)
+        return HScript.fromLua(HScript.functions[Function](...) or nil)
     end
     return nil
 end

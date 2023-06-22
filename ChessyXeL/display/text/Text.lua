@@ -38,7 +38,7 @@ Text.override('revive', function (super, txt)
     return txt
 end)
 Text.override('destroy', function (super, txt)
-    super()
+    super(txt)
     if Log.logger.enabled and Log.logObjects then
         Log.logger.log('Text of ID '..txt.name..' was Destroyed')
     end

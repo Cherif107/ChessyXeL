@@ -26,7 +26,7 @@ CacheUtil = {
         Object.waitingList.add(function()
             CacheUtil.forEach(directory, function(sound)
                 if sound:find('.ogg') then
-                    CacheUtil.sound(sound:gsub('.ogg', ''))
+                    CacheUtil.sound(sound:gsub('.ogg', ''):gsub('mods/sounds/', ''):gsub('assets/sounds/', ''):gsub('assets/shared/sounds/', ''))
                 end
             end)
         end)
@@ -36,7 +36,7 @@ CacheUtil = {
         Object.waitingList.add(function()
             CacheUtil.forEach(directory, function(image)
                 if image:find('.png') then
-                    CacheUtil.image(image:gsub('.png', ''))
+                    CacheUtil.image(image:gsub('.png', ''):gsub('mods/images/', ''):gsub('assets/images/', ''):gsub('assets/shared/images/', ''))
                 end
             end)
         end)
