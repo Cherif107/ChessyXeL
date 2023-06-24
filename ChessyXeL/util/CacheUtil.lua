@@ -5,7 +5,7 @@ local CacheUtil = {}
 CacheUtil = {
     forEach = function (directory, func)
         for index, file in pairs(directoryFileList(directory)) do
-            if not file:find('.') then
+            if not file:find('%.') then
                 CacheUtil.forEach(directory..'/'..file, func)
             else
                 func(directory..'/'..file)
@@ -37,6 +37,7 @@ CacheUtil = {
             CacheUtil.forEach(directory, function(image)
                 if image:find('.png') then
                     CacheUtil.image(image:gsub('.png', ''):gsub('mods/images/', ''):gsub('assets/images/', ''):gsub('assets/shared/images/', ''))
+                    -- debugPrint(image:gsub('.png', ''):gsub('mods/images/', ''):gsub('assets/images/', ''):gsub('assets/shared/images/', ''))
                 end
             end)
         end)

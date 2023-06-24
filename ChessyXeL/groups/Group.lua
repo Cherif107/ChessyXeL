@@ -29,7 +29,7 @@ Group._memberRemoved = FieldStatus.NORMAL('default', 'default', Signal())
 Group._marker = FieldStatus.NORMAL('default', 'default', 0)
 
 Group.override('destroy', function (super, group)
-    super()
+    super(group)
     group.forEach(function (member)
         if member ~= nil and member.destroy then
             member.destroy()

@@ -46,7 +46,8 @@ end
 Button.override('add', function (super, button, onTop)
     super(button, onTop)
     button.label.add(onTop)
-    button.label.order = button.order + 1
+    button.label.order = button.order
+    button.order = button.order
 end)
 Button.override('kill', function (super, button)
     super(button)
