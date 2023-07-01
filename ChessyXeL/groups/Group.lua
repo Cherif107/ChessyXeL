@@ -56,7 +56,7 @@ Group.add = Method.PUBLIC(function (group, object, onTop)
         if idx > group.length then
             group.length = idx + 1
         end
-        if object.is(Group) then
+        if not object.is(Group) then
             object.add(onTop)
         end
         if onTop then
@@ -75,7 +75,7 @@ Group.add = Method.PUBLIC(function (group, object, onTop)
     group.members[#group.members+1] = object
     group.length = group.length + 1
 
-    if object.is(Group) then
+    if not object.is(Group) then
         object.add(onTop)
     end
     if onTop then
