@@ -318,6 +318,9 @@ Class = {
                     __instanceClass = class,
                     nullAccess = false
                 }
+                instance.is = function (otherClass)
+                    return instance.__instanceClass.is(otherClass)
+                end
                 for field, F in pairs(class.classVariables) do
                     instance.regularFields[field] = F.value
                 end
