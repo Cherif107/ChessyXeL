@@ -19,7 +19,7 @@ Math.roundDecimal = function (Value, Precision)
     for i = 1, Precision do
         mult = mult * 10
     end
-    return Math.fround(Value * mult) / mult
+    return Math.round(Value * mult) / mult
 end
 
 Math.round = function (num)

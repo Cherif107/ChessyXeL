@@ -38,28 +38,36 @@ Class = {
                             if instanceClass.classVariables[field].isMethod then
                                 return function (...)
                                     local OGPACCESS = instance.privateAccess
+                                    instance.nullAccess = true
                                     instance.privateAccess = true
                                     local p = instanceClass.classVariables[field].value(instance, ...)
                                     instance.privateAccess = OGPACCESS
+                                    instance.nullAccess = false
                                     return p
                                 end
                             else
                                 --- Check if `field`'s get method is not set to 'never'
                                 if instanceClass.classVariables[field].get ~= 'never' then
-                                    --- Check if `field`'s get method is not nil
-                                    if instanceClass.classVariables[field].get ~= nil and not instanceClass.classVariables[field].bypassedGet then
-                                        local OGPACCESS = instance.privateAccess
-                                        instance.privateAccess = true
-                                        instanceClass.classVariables[field].bypassedGet = true
-                                        local m = instanceClass.classVariables[field].get(instance, field)
-                                        if logMeta.get then logMeta.get(instance, field) end
-                                        instanceClass.classVariables[field].bypassedGet = false
-                                        instance.privateAccess = OGPACCESS
-                                        return m
+                                    if instanceClass.classVariables[field].get ~= 'null' or (instance.nullAccess or instanceClass.__constructorAccess) then
+                                        --- Check if `field`'s get method is not nil
+                                        if instanceClass.classVariables[field].get ~= nil and instanceClass.classVariables[field].get ~= 'null' and not instanceClass.classVariables[field].bypassedGet then
+                                            local OGPACCESS = instance.privateAccess
+                                            instance.privateAccess = true
+                                            instance.nullAccess = true
+                                            instanceClass.classVariables[field].bypassedGet = true
+                                            local m = instanceClass.classVariables[field].get(instance, field)
+                                            if logMeta.get then logMeta.get(instance, field) end
+                                            instanceClass.classVariables[field].bypassedGet = false
+                                            instance.privateAccess = OGPACCESS
+                                            instance.nullAccess = false
+                                            return m
+                                        else
+                                            --- Return the value in the Instance if the get method is nil 
+                                            if logMeta.get then logMeta.get(instance, field) end
+                                            return instance.regularFields[field]
+                                        end
                                     else
-                                        --- Return the value in the Instance if the get method is nil 
-                                        if logMeta.get then logMeta.get(instance, field) end
-                                        return instance.regularFields[field]
+                                        return error('expression ('..field..') cannot be accessed for reading')
                                     end
                                 else
                                     return error('Cannot access field `'..field..'` for reading.') -- Cannot get this field
@@ -92,21 +100,27 @@ Class = {
                         else
                             --- Check if `field`'s set method is not set to 'never'
                             if instanceClass.classVariables[field].set ~= 'never' then
-                                --- Check if `field`'s set method is not nil
-                                if instanceClass.classVariables[field].set ~= nil and not instanceClass.classVariables[field].bypassedSet then
-                                    local OGPACCESS = instance.privateAccess
-                                    instance.privateAccess = true
-                                    instanceClass.classVariables[field].bypassedSet = true
-                                    local m = instanceClass.classVariables[field].set(value, instance, field)
-                                    if logMeta.set then logMeta.set(instance, field, value) end
-                                    instanceClass.classVariables[field].bypassedSet = false
-                                    instance.privateAccess = OGPACCESS
-                                    return m
+                                if instanceClass.classVariables[field].set ~= 'null' or (instance.nullAccess or instanceClass.__constructorAccess) then
+                                    --- Check if `field`'s set method is not nil
+                                    if instanceClass.classVariables[field].set ~= nil and instanceClass.classVariables[field].set ~= 'null' and not instanceClass.classVariables[field].bypassedSet then
+                                        local OGPACCESS = instance.privateAccess
+                                        instance.privateAccess = true
+                                        instance.nullAccess = true
+                                        instanceClass.classVariables[field].bypassedSet = true
+                                        local m = instanceClass.classVariables[field].set(value, instance, field)
+                                        if logMeta.set then logMeta.set(instance, field, value) end
+                                        instanceClass.classVariables[field].bypassedSet = false
+                                        instance.privateAccess = OGPACCESS
+                                        instance.nullAccess = false
+                                        return m
+                                    else
+                                        --- sets the value in the Instance if the get method is nil 
+                                        instance.regularFields[field] = value
+                                        if logMeta.set then logMeta.set(instance, field, value) end
+                                        return
+                                    end
                                 else
-                                    --- sets the value in the Instance if the get method is nil 
-                                    instance.regularFields[field] = value
-                                    if logMeta.set then logMeta.set(instance, field, value) end
-                                    return
+                                    return error('expression ('..field..') cannot be accessed for writing')
                                 end
                             else
                                 return error('Cannot access field `'..field..'` for writing.') -- Cannot get this field
@@ -127,6 +141,9 @@ Class = {
         end}
         --- [ INDEX ] ---
         metatable.__index = function (class, field)
+            if field == 'new' then
+                return class.__classConstructor
+            end
             --- Check if `field` is actually in `class` instead of `class.classFields`
             if rawget(class, field) ~= nil then
                 return rawget(class, field) -- returns the Field directly
@@ -145,25 +162,33 @@ Class = {
                                 return function (...)
                                     local OGPACCESS = class.privateAccess
                                     class.privateAccess = true
+                                    class.nullAccess = true
                                     local p = class.classVariables[field].value(class, ...)
                                     class.privateAccess = OGPACCESS
+                                    class.nullAccess = false
                                     return p
                                 end
                             else
                                 --- Check if `field`'s get method is not set to 'never'
                                 if class.classVariables[field].get ~= 'never' then
-                                    --- Check if `field`'s get method is not nil
-                                    if class.classVariables[field].get ~= nil and not class.classVariables[field].bypassedGet then
-                                        local OGPACCESS = class.privateAccess
-                                        class.privateAccess = true
-                                        class.classVariables[field].bypassedGet = true
-                                        local m = class.classVariables[field].get(class, field)
-                                        class.classVariables[field].bypassedGet = false
-                                        class.privateAccess = OGPACCESS
-                                        return m
+                                    if class.classVariables[field].get ~= 'null' or class.nullAccess then
+                                        --- Check if `field`'s get method is not nil
+                                        if class.classVariables[field].get ~= nil and class.classVariables[field].get ~= 'null' and not class.classVariables[field].bypassedGet then
+                                            local OGPACCESS = class.privateAccess
+                                            class.privateAccess = true
+                                            class.nullAccess = true
+                                            class.classVariables[field].bypassedGet = true
+                                            local m = class.classVariables[field].get(class, field)
+                                            class.classVariables[field].bypassedGet = false
+                                            class.privateAccess = OGPACCESS
+                                            class.nullAccess = false
+                                            return m
+                                        else
+                                            --- Return the value in the Instance if the get method is nil 
+                                            return class.classFields[field]
+                                        end
                                     else
-                                        --- Return the value in the Instance if the get method is nil 
-                                        return class.classFields[field]
+                                        return error('expression ('..field..') cannot be accessed for reading')
                                     end
                                 else
                                     return error('Cannot access field `'..field..'` for reading.') -- Cannot get this field
@@ -176,6 +201,14 @@ Class = {
         end
         --- [ NEW INDEX ] ---
         metatable.__newindex = function (class, field, value)
+            if field == 'new' then
+                return rawset(class, '__classConstructor', function (...)
+                    class.__constructorAccess = true
+                    local instance = value(...)
+                    class.__constructorAccess = false
+                    return instance
+                end)
+            end
             if type(value) == 'table' then
                 if getmetatable(value) and getmetatable(value).__type == 'EnumDataValue' then
                     local m = getmetatable(value).parent.parent
@@ -219,18 +252,24 @@ Class = {
                         else
                             --- Check if `field`'s set method is not set to 'never'
                             if class.classVariables[field].set ~= 'never' then
-                                --- Check if `field`'s set method is not nil
-                                if class.classVariables[field].set ~= nil and not class.classVariables[field].bypassedSet then
-                                    local OGPACCESS = class.privateAccess
-                                    class.privateAccess = true
-                                    class.classVariables[field].bypassedSet = true
-                                    local m = class.classVariables[field].set(value, class, field)
-                                    class.classVariables[field].bypassedSet = false
-                                    class.privateAccess = OGPACCESS
-                                    return m
+                                if class.classVariables[field].set ~= 'null' or class.nullAccess then
+                                    --- Check if `field`'s set method is not nil
+                                    if class.classVariables[field].set ~= nil and class.classVariables[field].set ~= 'null' and not class.classVariables[field].bypassedSet then
+                                        local OGPACCESS = class.privateAccess
+                                        class.privateAccess = true
+                                        class.nullAccess = true
+                                        class.classVariables[field].bypassedSet = true
+                                        local m = class.classVariables[field].set(value, class, field)
+                                        class.classVariables[field].bypassedSet = false
+                                        class.privateAccess = OGPACCESS
+                                        class.nullAccess = false
+                                        return m
+                                    else
+                                        --- sets the value in the Class if the get method is nil 
+                                        class.classFields[field] = value
+                                    end
                                 else
-                                    --- sets the value in the Class if the get method is nil 
-                                    class.classFields[field] = value
+                                    return error('expression ('..field..') cannot be accessed for writing')
                                 end
                             else
                                 return error('Cannot access field `'..field..'` for writing.') -- Cannot get this field
@@ -253,22 +292,36 @@ Class = {
             classFields = {},
             classVariables = {},
             privateAccess = false,
+            nullAccess = false,
+            __extendedClass = '?',
+            __constructorAccess = false,
+            __classConstructor = function (...)
+                return class.create(...)
+            end,
 
+            is = function (otherClass)
+                if class == otherClass then
+                    return true
+                end
+                if class.__extendedClass == '?' then
+                    return false
+                else
+                    return class.__extendedClass.is(otherClass)
+                end
+            end,
             create = function (...)
                 local instance = {
                     __type = class.className,
                     __isClassInstance = true,
                     regularFields = {},
                     privateAccess = false,
-                    __instanceClass = class
+                    __instanceClass = class,
+                    nullAccess = false
                 }
                 for field, F in pairs(class.classVariables) do
                     instance.regularFields[field] = F.value
                 end
                 return setmetatable(instance, class.instanceMeta)
-            end,
-            new = function (...)
-                return class.create(...)
             end,
             extend = function (className)
                 local newClass = Class(className)
@@ -300,6 +353,7 @@ Class = {
                         end
                     end
                 end
+                newClass.__extendedClass = class
                 return newClass
             end
         }

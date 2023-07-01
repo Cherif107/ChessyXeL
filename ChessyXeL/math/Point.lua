@@ -97,6 +97,22 @@ Point.pivotDegrees = Method.PUBLIC(function (I, pivot, deg)
     return I.pivotRadians(pivot, math.rad(deg))
 end)
 
+Point.radiansTo = Method.PUBLIC(function (I, point)
+    return math.atan2(point.y - I.y, point.x - I.x)
+end)
+Point.degreesTo = Method.PUBLIC(function (I, point)
+    return math.deg(I.radiansTo(point))
+end)
+
+Point.distSquared = Method.PUBLIC(function (I, point)
+    local dx, dy = point.x - I.x, point.y - I.y
+    point.putWeak()
+    return dx * dx + dy * dy
+end)
+Point.dist = Method.PUBLIC(function (I, point)
+    return math.sqrt(I.distSquared(point))
+end)
+
 Point.floor = Method.PUBLIC(function (p)
     p.x = math.floor(p.x)
     p.y = math.floor(p.y)

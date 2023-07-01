@@ -24,8 +24,8 @@ Group.memberRemoved = FieldStatus.PUBLIC(function (I)
     return I._memberRemoved
 end, 'never', Signal())
 
-Group._memberAdded = FieldStatus.NORMAL('default', 'default', Signal())
-Group._memberRemoved = FieldStatus.NORMAL('default', 'default', Signal())
+Group._memberAdded = FieldStatus.PUBLIC('default', 'default', nil)
+Group._memberRemoved = FieldStatus.PUBLIC('default', 'default', nil)
 Group._marker = FieldStatus.NORMAL('default', 'default', 0)
 
 Group.override('destroy', function (super, group)
@@ -234,6 +234,8 @@ Group.new = function (maxSize)
     group.members = {}
     group.maxSize = math.floor(math.abs(maxSize or 0))
 
+    group._memberAdded = Signal()
+    group._memberRemoved = Signal()
 
     return group
 end

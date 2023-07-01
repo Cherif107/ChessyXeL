@@ -39,13 +39,22 @@ Sprite.animation =
 Sprite.color =
     FieldStatus.PUBLIC(
     function(I, F)
-        local col = Color(getProperty(I.name .. ".color"))
-        return col
+        if not I.color then
+            return nil
+        end
+        Object.waitingList.add(function()
+            I.color.value = Color.parseColor(getProperty(I.name .. ".color"))
+        end)
+        return I.color
     end,
     function(V, I, F)
-        return I.set("color", Color.parseColor(V))
+        I.set("color", Color.parseColor(V))
+        if not I.color then
+            I.color = V
+        end
+        return true
     end,
-    Color.WHITE,
+    nil,
     false
 )
 Sprite.colorTransform =
@@ -477,9 +486,14 @@ Sprite.new = function(x, y, a)
     if a ~= "DO NOT INITIALIZE" then
         Sprite.INITIALIZE_FUNCTION(sprite.name, "", x, y)
     end
+
+    sprite.color = Color(Color.WHITE)
+    sprite.color.parent = sprite
+    
     sprite.colorTransform = ColorTransform()
     sprite.colorTransform.parent = sprite
     sprite.animation = Animation(sprite)
+
     return sprite
 end
 

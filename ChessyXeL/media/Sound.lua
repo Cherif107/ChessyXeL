@@ -84,16 +84,24 @@ Sound.pitch = FieldStatus.PUBLIC('default', function (V, I)
     end)
     I.pitch = V
 end, 1)
+
+Sound.pan = FieldStatus.PUBLIC('default', function (V, I)
+    Object.waitingList.add(function ()
+        HScript.call('setOnSound', I.name, 'pan', V)
+    end)
+    I.pan = V
+end, 0)
 -- [[ Hscript\ ]] --
 
 Sound.instances = FieldStatus.PUBLIC('default', 'default', {}, true)
-Sound.new = function(soundPath)
+Sound.new = function(soundPath, volume)
     local sound = Sound.create()
     Object.waitingList.add(function()
         precacheSound(soundPath)
     end)
 
     sound.soundPath = soundPath
+    sound.volume = volume
     sound.name = 'CHESSYXEL_SOUND_'..Object.GlobalObjectTag..'_'..sound.ID
 
     Sound.instances[sound.name] = sound

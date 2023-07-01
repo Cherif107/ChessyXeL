@@ -4,6 +4,7 @@ local Method = require "ChessyXeL.Method"
 local Math = require "ChessyXeL.math.Math"
 local Ease = require "ChessyXeL.tweens.Ease"
 local Bit = require 'ChessyXeL.util.Bit'
+local LogClass = require 'ChessyXeL.util.LogClass'
 local function switchCase(var, cases)
     for _, __ in pairs(cases) do
         if var == _ then
@@ -44,7 +45,7 @@ end
 ---@field public MAGENTA integer Magenta Color
 ---@field public PURPLE integer Purple Color
 --- [[ FIELDS : END ]] ---
-local Color = Class "Color"
+local Color = LogClass.extend "Color"
 
 Color.BLACK = ColorField(0xFF000000)
 Color.GRAY = ColorField(0xFF808080)
@@ -61,6 +62,12 @@ Color.PINK = ColorField(0xFFFFC0CB)
 Color.MAGENTA = ColorField(0xFFFF00FF)
 Color.PURPLE = ColorField(0xFF800080)
 Color.TRANSPARENT = ColorField(0x00000000)
+
+Color.override('onSetLog', function (super, Self, color, field, value)
+    if field == 'value' and color.parent then
+        color.parent[color.parentField] = color
+    end
+end) 
 
 Color.fromString =
     ColorMethod(
@@ -90,10 +97,10 @@ Color.fromCMYK =
     end
 )
 Color.fromHSB =
-    ColorMethod(
-    function(Hue, Saturation, Brightness, Alpha)
+    Method.PUBLIC(
+    function(me, Hue, Saturation, Brightness, Alpha)
         return Color().setHSB(Hue, Saturation, Brightness, Alpha or 1)
-    end
+    end, true
 )
 Color.fromHSL =
     ColorMethod(
@@ -110,7 +117,7 @@ Color.parseColor = function(color)
         return Color.fromRGB(color[1], color[2], color[3]).value
     elseif type(color) == "string" then
         return Color.fromString(color)
-    else
+    elseif type(color) == 'number' then
         return bit.tobit(color)
     end
 end
@@ -211,6 +218,8 @@ function Color.getLightColorWheel(Alpha)
     return c
 end
 
+Color.parent = FieldStatus.PUBLIC("default", "default", nil)
+Color.parentField = FieldStatus.PUBLIC('default', 'default', 'color')
 Color.value = FieldStatus.PUBLIC("default", "default", Color.BLACK)
 Color.red =
     FieldStatus.PUBLIC(
