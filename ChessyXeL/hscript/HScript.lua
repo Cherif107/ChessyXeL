@@ -252,7 +252,7 @@ HScript.initialize = function (force)
             function addHScriptFunction(functionName, luaName){
                 setOnHscript(functionName, Reflect.makeVarArgs(function(arguments){
                     arguments.insert(0, luaName);
-                    return game.callOnLuas('__chessyxel__callbacks__hscript__callontable__', [luaName]);
+                    return game.callOnLuas('__chessyxel__callbacks__hscript__callontable__', arguments);
                 }));
             }
             addCallback('setOnHscript', setOnHscript);
