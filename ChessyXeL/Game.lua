@@ -38,13 +38,12 @@ local Game = {
     playerStrums = Obj('playerStrums.members'),
     opponentStrums = Obj('opponentStrums.members'),
     strumLineNotes = Obj('strumLineNotes.members'),
+    notes = Obj('notes.members'),
     members = Obj('members')
 }
 setmetatable(Game, {
     __index = function (t, f)
-        -- debugPrint('hi '..f)
         if getProperty and getProperty(f) ~= f then
-            -- debugPrint('hi #3 '..f)
             return getProperty(f)
         end
         local o = Object()
@@ -60,6 +59,11 @@ setmetatable(Game, {
         
         rawset(Game, f, o)
         return o
+    end,
+    __newindex = function (t, f, v)
+        if getProperty and getProperty(f) ~= f then
+            return setProperty(f, v)
+        end
     end
 })
 return Game

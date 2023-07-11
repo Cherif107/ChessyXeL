@@ -63,9 +63,21 @@ Text.applyMarkup = Method.PUBLIC(function (text, input, rules)
     return text
 end)
 
-Text.borderColor = FieldStatus.PUBLIC(function(I, F) return Color(getProperty(I.name..'.borderColor')) end, function (V, I, F)
-    I.set('borderColor', Color.parseColor(V))
-end, Color.BLACK, false)
+Text.borderColor = FieldStatus.PUBLIC(function(I, F)
+    if not I.borderColor then
+        return nil
+    end
+    Object.waitingList.add(function()
+        I.borderColor.value = Color.parseColor(tonumber(getProperty(I.name .. ".borderColor")) or 0)
+    end)
+    return I.borderColor
+end, function (V, I, F)
+    I.set("borderColor", Color.parseColor(V))
+    if not I.borderColor then
+        I.borderColor = V
+    end
+    return true
+end, nil, false)
 Text.font = FieldStatus.PUBLIC('default', function (V, text, F)
     text.font = V
     Object.waitingList.add(function ()
@@ -75,6 +87,11 @@ end, 'vcr.ttf')
 Text.new = function (x, y, fieldWidth, text, size, color, font)
     local this = Text.create(x, y, 'DO NOT INITIALIZE')
     Text.INITIALIZE_FUNCTION(this.name, x, y, fieldWidth, text)
+
+    this.borderColor = Color(Color.BLACK)
+    this.borderColor.parent = this
+    this.borderColor.parentField = 'borderColor'
+
     Object.waitingList.add(function ()
         this.size = size or 14
         this.color = color or 0xFFffffff

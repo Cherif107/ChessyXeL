@@ -26,7 +26,7 @@ Mouse.overlaps = Method.PUBLIC(function (mouse, object, camera)
             end
         end)
     end
-    return object.overlapsPoint(Point(mouse.x, mouse.y), true, camera)
+    return object.overlapsPoint(mouse.getScreenPosition(camera), false, camera)
 end)
 
 Mouse.new = function()

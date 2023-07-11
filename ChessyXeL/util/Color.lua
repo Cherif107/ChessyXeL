@@ -652,12 +652,40 @@ Color.getComplementHarmony =
     function(color)
         return Color.fromHSB(
             Math.wrap(math.floor(color.hue) + 180, 0, 350),
-            color.brightness,
             color.saturation,
+            color.brightness,
             color.alphaFloat
         )
     end
 )
+
+Color.getTetradicHarmony =
+    Method.PUBLIC(
+    function(color)
+        local t1 =
+            Color.fromHSB(
+            Math.wrap(math.floor(color.hue) - 60, 0, 359),
+            color.saturation,
+            color.brightness,
+            color.alphaFloat
+        )
+        local t2 =
+            Color.fromHSB(
+            Math.wrap(math.floor(color.hue) + 120, 0, 359),
+            color.saturation,
+            color.brightness,
+            color.alphaFloat
+        )
+        local t3 = Color.fromHSB(
+            Math.wrap((math.floor(color.hue) - 180), 0, 359),
+            color.saturation,
+            color.brightness,
+            color.alphaFloat
+        )
+        return {color1 = t1, color2 = color, color3 = t2, color4 = t3}
+    end
+)
+
 Color.new = function(value)
     local this = Color.create()
     this.value = Color.parseColor(value or Color.BLACK)
