@@ -3,6 +3,7 @@ local Object = require 'ChessyXeL.display.object.Object'
 local Mouse = require 'ChessyXeL.input.Mouse'
 local Sprite = require 'ChessyXeL.display.Sprite'
 local Text = require 'ChessyXeL.display.text.Text'
+local Group = require 'ChessyXeL.groups.Group'
 
 local function Obj(name)
     local obj = Object()
@@ -35,28 +36,39 @@ local Game = {
     iconP1 = Sprite.fromTag('iconP1'),
     iconP2 = Sprite.fromTag('iconP2'),
 
-    playerStrums = Obj('playerStrums.members'),
-    opponentStrums = Obj('opponentStrums.members'),
-    strumLineNotes = Obj('strumLineNotes.members'),
-    notes = Obj('notes.members'),
     members = Obj('members')
 }
+
+local function checkType(obj, tag)
+    if type(obj.numFrames) == 'number' then
+        if type(obj.borderColor) == 'number' then
+            return Text.fromTag(tag)
+        else
+            return Sprite.fromTag(tag)
+        end
+    end
+
+    if type(obj.ID) == 'number' and type(obj.maxSize) == 'number' and type(obj.length) == 'number' then
+        local group = Group(obj.maxSize)
+        group.name = tag
+        for i = 0, obj.length - 1 do
+            group.members[i + 1] = checkType(Obj(tag..'.members['..i..']'), tag..'.members['..i..']')
+        end
+        return group
+    end
+
+    return obj
+end
 setmetatable(Game, {
     __index = function (t, f)
         if getProperty and getProperty(f) ~= f then
             return getProperty(f)
         end
+
         local o = Object()
         o.name = f
+        o = checkType(o, f)
 
-        if type(o.numFrames) == 'number' then
-            if type(o.borderColor) == 'number' then
-                o = Text.fromTag(f)
-            else
-                o = Sprite.fromTag(f)
-            end
-        end
-        
         rawset(Game, f, o)
         return o
     end,
