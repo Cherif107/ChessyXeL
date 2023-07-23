@@ -10,11 +10,18 @@ local Sound = Basic.extend 'Sound'
 
 Stage.set('onCreatePost', function ()
     HScript.execute [[
+        import openfl.media.SoundTransform;
         function setOnSound(name:String, variable:String, value:Dynamic){
             Reflect.setProperty(game.modchartSounds[name], variable, parseLua(value));
         }
         function getOnSound(name:String, variable:String){
             return toLua(Reflect.getProperty(game.modchartSounds[name], variable));
+        }
+        
+        function setSoundPan(name:String, pan:Float){
+            var sound = game.modchartSounds.get(name);
+            sound.pan = pan;
+            sound._channel.soundTransform = new SoundTransform(sound.volume, pan);
         }
     ]]
 end)
@@ -87,7 +94,7 @@ end, 1)
 
 Sound.pan = FieldStatus.PUBLIC('default', function (V, I)
     Object.waitingList.add(function ()
-        HScript.call('setOnSound', I.name, 'pan', V)
+        HScript.call('setSoundPan', I.name, V)
     end)
     I.pan = V
 end, 0)
