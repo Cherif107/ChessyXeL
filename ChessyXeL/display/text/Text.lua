@@ -68,7 +68,7 @@ Text.borderColor = FieldStatus.PUBLIC(function(I, F)
         return nil
     end
     Object.waitingList.add(function()
-        I.borderColor.value = Color.parseColor(tonumber(getProperty(I.name .. ".borderColor")) or 0)
+        I.borderColor.value = Color.parseColor(tonumber(getProperty(I.name .. ".borderColor") or 0) or 0)
     end)
     return I.borderColor
 end, function (V, I, F)

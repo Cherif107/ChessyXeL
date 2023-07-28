@@ -43,7 +43,7 @@ Sprite.color =
             return nil
         end
         Object.waitingList.add(function()
-            I.color.value = Color.parseColor(tonumber(getProperty(I.name .. ".color")) or 0)
+            I.color.value = Color.parseColor(tonumber(getProperty(I.name .. ".color") or 0) or 0)
         end)
         return I.color
     end,

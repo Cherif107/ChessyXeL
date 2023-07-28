@@ -1,3 +1,5 @@
+-- testing stuff in here
+
 local Class = require 'ChessyXeL.Class'
 local Method = require 'ChessyXeL.Method'
 local FieldStatus = require 'ChessyXeL.FieldStatus'
@@ -6,8 +8,8 @@ local Sprite, Text, Sound
 
 require "ChessyXeL.util.StringUtil"
 
----@class hscript.HScript : Class
-local HScript = Class 'HScript'
+---@class hscript.HScriptX : Class
+local HScriptX = Class 'HScriptX'
 
 local isArray = function(table)
     if type(table) ~= "table" then
@@ -20,8 +22,8 @@ local isArray = function(table)
     return count == #table
 end
 
-HScript.functions = FieldStatus.PUBLIC('default', 'default', {}, true)
-HScript.import = Method.PUBLIC(function (hscript, class)
+HScriptX.functions = FieldStatus.PUBLIC('default', 'default', {}, true)
+HScriptX.import = Method.PUBLIC(function (hscript, class)
     local splittedLibrary = class:split(".")
     local importedLibrary = table.remove(splittedLibrary, #splittedLibrary)
 
@@ -32,9 +34,9 @@ HScript.import = Method.PUBLIC(function (hscript, class)
 end, true)
 
 ---@deprecated
-HScript.addLibrary = HScript.import
+HScriptX.addLibrary = HScriptX.import
 
-HScript.getImports = Method.PUBLIC(function (hscript, code)
+HScriptX.getImports = Method.PUBLIC(function (hscript, code)
     local imports = {}
     for imp in code:gmatch("import%s+([%w%._]+);") do
         imports[#imports + 1] = imp
@@ -42,8 +44,8 @@ HScript.getImports = Method.PUBLIC(function (hscript, code)
     return imports
 end, true)
 
-HScript.shouldInitialize = FieldStatus.PUBLIC('default', 'default', true, true)
-HScript.initialize = Method.PUBLIC(function (hscript, force)
+HScriptX.shouldInitialize = FieldStatus.PUBLIC('default', 'default', true, true)
+HScriptX.initialize = Method.PUBLIC(function (hscript, force)
     if hscript.shouldInitialize or force then
         for _, library in pairs({"String", 'haxe.Rest', "Int", "Float", "Bool", "Array", 'Std', 'Reflect', 'Type', "flixel.text.FlxTextFormat", "flixel.text.FlxTextFormatMarkerPair", 'haxe.ds.StringMap', 'haxe.ds.ObjectMap', 'haxe.ds.IntMap', 'flixel.text.FlxText', 'ModchartText', 'ModchartSprite', 'llua.Lua_helper'}) do
             hscript.import(library)
@@ -160,11 +162,11 @@ HScript.initialize = Method.PUBLIC(function (hscript, force)
     end
 end, true)
 
-HScript.unsafeExecute = Method.PUBLIC(function (hscript, code)
+HScriptX.unsafeExecute = Method.PUBLIC(function (hscript, code)
     return Object.waitingList.add(function() runHaxeCode(code) end)
 end, true)
 
-HScript.execute = Method.PUBLIC(function (hscript, code)
+HScriptX.execute = Method.PUBLIC(function (hscript, code)
     local imports = hscript.getImports(code) -- get code imports
     code = code:gsub("import%s+.-\n", "") -- delete all imports
     for i = 1, #imports do
@@ -175,7 +177,7 @@ HScript.execute = Method.PUBLIC(function (hscript, code)
     return hscript.unsafeExecute(code)
 end, true)
 
-HScript.convertToHaxe = Method.PUBLIC(function (hscript, object)
+HScriptX.convertToHaxe = Method.PUBLIC(function (hscript, object)
     if type(object) == 'table' then
         if object.__type == 'Color' then
             return object.value
@@ -212,7 +214,7 @@ HScript.convertToHaxe = Method.PUBLIC(function (hscript, object)
     end
     return {'none', type(object), {object}}
 end, true)
-HScript.convertToLua = Method.PUBLIC(function (hscript, object)
+HScriptX.convertToLua = Method.PUBLIC(function (hscript, object)
     if Sprite == nil then
         Sprite = require 'ChessyXeL.display.Sprite'
         Text = require 'ChessyXeL.display.text.Text'
@@ -245,21 +247,21 @@ HScript.convertToLua = Method.PUBLIC(function (hscript, object)
     return object[2]
 end, true)
 
-HScript.setFunction = Method.PUBLIC(function (hscript, name, Function)
-    HScript.initialize()
+HScriptX.setFunction = Method.PUBLIC(function (hscript, name, Function)
+    HScriptX.initialize()
     hscript.functions[name] = Function
     Object.waitingList.add(function ()
         __chessyxel_set_hscript(name, {name, 'Function', {}})
     end)
 end, true)
-HScript.set = Method.PUBLIC(function (hscript, name, value)
-    HScript.initialize()
+HScriptX.set = Method.PUBLIC(function (hscript, name, value)
+    HScriptX.initialize()
     Object.waitingList.add(function ()
-        __chessyxel_set_hscript(name, HScript.convertToHaxe(value))
+        __chessyxel_set_hscript(name, HScriptX.convertToHaxe(value))
     end)
 end, true)
-HScript.call = Method.PUBLIC(function (hscript, name, ...)
-    HScript.initialize()
+HScriptX.call = Method.PUBLIC(function (hscript, name, ...)
+    HScriptX.initialize()
 
     local arguments = hscript.convertToHaxe({...})
     return Object.waitingList.add(function ()
@@ -268,9 +270,9 @@ HScript.call = Method.PUBLIC(function (hscript, name, ...)
 end, true)
 
 function __chessyxel__call_from_hscript(Function, ...)
-    if HScript.functions[Function] then
-        return HScript.convertToHaxe(HScript.functions[Function](...) or nil)
+    if HScriptX.functions[Function] then
+        return HScriptX.convertToHaxe(HScriptX.functions[Function](...) or nil)
     end
 end
 
-return HScript
+return HScriptX

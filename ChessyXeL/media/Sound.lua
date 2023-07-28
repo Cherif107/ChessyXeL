@@ -8,23 +8,21 @@ local Stage = require 'ChessyXeL.Stage'
 ---@class media.Sound : Basic
 local Sound = Basic.extend 'Sound'
 
-Stage.set('onCreatePost', function ()
-    HScript.execute [[
-        import openfl.media.SoundTransform;
-        function setOnSound(name:String, variable:String, value:Dynamic){
-            Reflect.setProperty(game.modchartSounds[name], variable, parseLua(value));
-        }
-        function getOnSound(name:String, variable:String){
-            return toLua(Reflect.getProperty(game.modchartSounds[name], variable));
-        }
-        
-        function setSoundPan(name:String, pan:Float){
-            var sound = game.modchartSounds.get(name);
-            sound.pan = pan;
-            sound._channel.soundTransform = new SoundTransform(sound.volume, pan);
-        }
-    ]]
-end)
+HScript.execute [[
+    import openfl.media.SoundTransform;
+    function setOnSound(name:String, variable:String, value:Dynamic){
+        Reflect.setProperty(game.modchartSounds[name], variable, parseLua(value));
+    }
+    function getOnSound(name:String, variable:String){
+        return toLua(Reflect.getProperty(game.modchartSounds[name], variable));
+    }
+    
+    function setSoundPan(name:String, pan:Float){
+        var sound = game.modchartSounds.get(name);
+        sound.pan = pan;
+        sound._channel.soundTransform = new SoundTransform(sound.volume, pan);
+    }
+]]
 
 Sound.name = FieldStatus.PUBLIC('default', 'default', 'SOUND')
 Sound.soundPath = FieldStatus.PUBLIC('default', 'default', 'SOUND')

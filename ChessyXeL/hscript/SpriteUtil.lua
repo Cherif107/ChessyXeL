@@ -8,7 +8,7 @@ local SpriteUtil = {
 
 function SpriteUtil.load()
     if not SpriteUtil.loaded then
-        HScript.runCode [[
+        HScript.execute [[
             import flixel.util.FlxGradient;
             import flixel.util.FlxSpriteUtil;
             import openfl.geom.Matrix;
